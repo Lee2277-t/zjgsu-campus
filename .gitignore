@@ -1,0 +1,31 @@
+node_modules/
+dist/
+.vite
+coverage
+playwright-report
+test-results
+*.local
+.DS_Store
+release/
+.tools/
+商砖小站-Web高保真原型-*/
+商砖小站-Web高保真原型-*.zip
+商砖小站-Web高保真原型-*.zip.sha256
+*.bundle
+
+# 微信开发者工具写在本机的项目状态（编译设置、预览条件等），每台机器不一样，不该进仓库
+miniprogram/*/project.private.config.json
+miniprogram/project.private.config.json
+
+# 真题批量导入用的 AppSecret。这是小程序后台的最高权限凭证，
+# 拿到它就能以小程序身份调所有接口 —— 绝不能进仓库
+scripts/.exam-upload.json
+scripts/.exam-upload-token.json
+
+# 导入进度（id → fileID + 是否已入库）。是本机跑批的中间状态，
+# 不是源码；它记的 fileID 也和某个具体环境绑定，换环境就作废
+data/exam-papers-imported.json
+
+# 改动前的备份原件（bugfix-send-20260929 / perf-opt-backup / privacy-modal-backup …）。
+# 这些是动手前的快照，不是源码：留一份在本机够用，进仓库只会让 diff 和 clone 变重
+_trash/

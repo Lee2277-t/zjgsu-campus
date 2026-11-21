@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "编辑帖子",
+  "usingComponents": {
+    "app-header": "/components/ui/app-header/index",
+    "base-button": "/components/ui/base-button/index"
+  }
+}

@@ -1,0 +1,66 @@
+/* sub/mine/favorites/favorites.wxss —— 我的收藏
+   复用 app.wxss：.container / .card / .tag / .segmented / .segmented-item-on /
+   .clamp2 / .faint。本页独有的全部是 fv-*，场景色沿用设计令牌。 */
+
+.fv-page { padding-top: 8rpx; }
+.fv-tabs { margin-bottom: 20rpx; }
+
+/* app.wxss 的 .segmented-item 是等分 flex、字号 28rpx。四个页签时每格还有富余，
+   加到五个之后「失物闲置」这四个字（约 112rpx）会把 130rpx 的格子顶满、
+   还没法缩字号 —— 所以本页单独降一档，并把字间距压掉一点。
+   不改成横向滚动：那样点当前项时列表会自己挪一下，反而更难点中。 */
+.fv-tabs .segmented-item {
+  font-size: var(--fs-aux);
+  letter-spacing: -0.5rpx;
+}
+
+.fv-loading { padding: 60rpx 0; text-align: center; font-size: var(--fs-sub); color: var(--c-faint); }
+
+.fv-count { margin: 0 8rpx 12rpx; }
+
+/* ---------- 收藏卡片 ---------- */
+.fv-item { padding-bottom: 20rpx; }
+.fv-item--hover { opacity: 0.72; }
+
+.fv-item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+/* 五种内容各用一种场景色，扫一眼就知道收的是课、是贴还是闲置 */
+.fv-tag.t-course { background: var(--c-brand-soft); color: var(--c-brand-deep); }
+.fv-tag.t-post { background: var(--c-forum-soft); color: var(--c-forum); }
+.fv-tag.t-review { background: var(--c-campus-soft); color: var(--c-campus-deep); }
+.fv-tag.t-market { background: var(--c-market-soft); color: var(--c-market-deep); }
+/* 招聘会跟课程/闲置都是「出门前看一眼」的东西，用暖黄，跟收藏时那颗星星对齐 */
+.fv-tag.t-event { background: #fff8e8; color: #a8760a; }
+
+/* 已经不在官网活动列表里的收藏。不做成灰掉整张卡 —— 那看着像坏件；
+   只在标签末尾补一句，让同学知道为什么点进去是空的。 */
+.fv-item__gone {
+  font-size: var(--fs-tag);
+  opacity: 0.75;
+}
+
+.fv-item__unfavorite {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-height: 88rpx;
+  padding: 0 4rpx 0 16rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.fv-item__unfavorite--hover { opacity: 0.6; }
+.fv-item__unfavorite-icon { width: 30rpx; height: 30rpx; }
+
+.fv-item__title { font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); line-height: 1.5; }
+.fv-item__desc {
+  margin-top: 12rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  line-height: 1.6;
+}

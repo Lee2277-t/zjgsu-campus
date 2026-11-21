@@ -1,0 +1,101 @@
+<!-- pages/user/account —— 账号与数据。
+     注销的完整后果必须写在这一页上，而不是藏在确认弹窗里：
+     用户点「申请注销」之前就该知道「帖子会留、好友会没」，
+     点下去才发现，那时候他已经做了决定。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="账号与数据" showBack />
+
+<view class="container ac">
+
+  <!-- ---------------- 注销状态 ----------------
+       未申请 → 讲清楚会发生什么，再给按钮；
+       已申请 → 只留倒计时和「撤销」。
+       两种状态下按钮的主次正好相反，所以这里不是「禁用按钮」而是两套模板 -->
+  <view class="card">
+    <view class="ac-sec">注销账号</view>
+
+    <block wx:if="{{unknown}}">
+      <view class="ac-warn">
+        暂时读不到注销状态。可能是云函数还没重新部署或网络不通 ——
+        先别重复提交，下拉刷新一次再说。
+      </view>
+      <base-button class="ac-btn" variant="ghost" block bindtap="load">重试</base-button>
+    </block>
+
+    <block wx:elif="{{!cancel.pending}}">
+      <view class="ac-desc">
+        提交后进入 <text class="ac-strong">7 天冷静期</text>，期间随时可以撤销。
+      </view>
+
+      <view class="ac-sub">到期后会<text class="ac-strong">删除</text></view>
+      <view class="ac-item">个人资料（昵称、头像、学院、签名、联系方式）</view>
+      <view class="ac-item">好友关系、待处理申请、拉黑名单</view>
+      <view class="ac-item">全部私信会话</view>
+      <view class="ac-item">收藏、备忘、活动报名</view>
+      <view class="ac-item">发布的二手闲置与学习资料（含文件本体）</view>
+
+      <view class="ac-sub">会<text class="ac-strong">匿名化保留</text></view>
+      <view class="ac-item">论坛帖子与评论：作者显示为「已注销用户」，内容留下</view>
+      <view class="ac-item">课程评价、发起的校园活动：同上</view>
+      <view class="ac-note">
+        为什么帖子和评论不删：论坛是一串互相咬合的对话。把一个人的发言整个抽走，
+        剩下那些「楼上说得对」就指向空气了，后来的人读到这里只会觉得内容坏了。
+        保留的是内容，不是身份 —— 昵称头像联系方式一律清空。
+      </view>
+
+      <base-button class="ac-btn" variant="danger" block bindtap="onCancel">
+        {{busy ? '处理中…' : '申请注销账号'}}
+      </base-button>
+    </block>
+
+    <block wx:else>
+      <view class="ac-count">
+        <view class="ac-count__days">{{cancel.leftDays}}</view>
+        <view class="ac-count__unit">天后正式生效</view>
+      </view>
+      <view class="ac-count__due">生效时间：{{cancel.dueText}}</view>
+      <view class="ac-note">
+        在这之前你随时可以撤销，账号一切照常。到期后帖子与评论会保留但改为匿名，
+        其余个人数据一并删除且不可恢复。
+      </view>
+      <base-button class="ac-btn" variant="primary" block bindtap="onUndo">
+        {{busy ? '处理中…' : '撤销注销，继续使用'}}
+      </base-button>
+    </block>
+  </view>
+
+  <!-- ---------------- 本机数据 ----------------
+       「清缓存」和「注销账号」放同一页是有意的：用户想「清掉重来」时最常见的误判
+       就是以为清缓存等于清账号，两个选项摆在一起才不会搞错 -->
+  <view class="card">
+    <view class="ac-sec">这台手机上的数据</view>
+    <view class="ac-desc">
+      清除本机缓存会清掉这台设备上的帖子、评价、收藏、草稿与缓存记录。
+      云端数据不受影响，重新进入会自动同步回来。
+    </view>
+    <base-button class="ac-btn" variant="ghost" block bindtap="onClearCache">
+      清除本机缓存
+    </base-button>
+  </view>
+
+  <!-- ---------------- 隐私 ----------------
+       隐私协议必须随时能翻到：微信在首次收集信息前会弹窗，
+       但用户也该有主动查看的入口，而不是只能等着它自己弹 -->
+  <view class="card card--flush ac-rows">
+    <view class="row pressable ac-row" hover-class="ac-row--hover" bindtap="onPrivacy">
+      <view class="ac-row__main">
+        <view class="ac-row__title">隐私保护指引</view>
+        <view class="ac-row__desc">我们收集什么、用在哪、怎么删</view>
+      </view>
+      <image class="ac-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+    <view class="row pressable ac-row" hover-class="ac-row--hover" bindtap="onGuide">
+      <view class="ac-row__main">
+        <view class="ac-row__title">应用说明</view>
+        <view class="ac-row__desc">这个小程序都能干什么</view>
+      </view>
+      <image class="ac-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+  </view>
+
+</view>

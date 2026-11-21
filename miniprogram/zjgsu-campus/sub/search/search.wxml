@@ -1,0 +1,81 @@
+<!-- pages/search —— 跨模块统一搜索。
+     顶部一个输入框，下面按「课程 / 帖子 / 闲置 / 校园活动 / 同学」分组出结果。
+     分组而不是混排：五个模块的条目长得不一样（课程有学分、闲置有价格），
+     混在一起用户没法判断哪一条才是自己要找的那类东西。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="搜索" showBack />
+
+<view class="container sc">
+
+  <!-- ---------------- 输入框 ----------------
+       confirm-type=search 让键盘右下角变成「搜索」，而不是默认的「完成」——
+       后者点下去什么都不发生，用户会以为搜索坏了 -->
+  <view class="sc-bar">
+    <image class="sc-bar__icon" src="/assets/icons/search--muted.svg" mode="aspectFit" />
+    <input
+      class="sc-bar__input"
+      value="{{keyword}}"
+      placeholder="课程、帖子、闲置、活动、同学"
+      placeholder-class="sc-bar__ph"
+      confirm-type="search"
+      focus="{{true}}"
+      bindinput="onInput"
+      bindconfirm="onSubmit"
+    />
+    <view wx:if="{{keyword}}" class="sc-bar__clear" bindtap="onClear">
+      <image class="sc-bar__clear-img" src="/assets/icons/x--muted.svg" mode="aspectFit" />
+    </view>
+  </view>
+
+  <!-- ---------------- 未输入：历史 + 热词 ----------------
+       新用户不知道能搜什么，空着的一页等于没有功能 -->
+  <block wx:if="{{!searched}}">
+    <view wx:if="{{history.length}}" class="card">
+      <view class="sc-sec">
+        <text>搜索历史</text>
+        <text class="sc-sec__act" bindtap="onClearHistory">清空</text>
+      </view>
+      <view class="sc-tags">
+        <view class="sc-tag" wx:for="{{history}}" wx:key="*this"
+              data-kw="{{item}}" bindtap="onTapKeyword">{{item}}</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="sc-sec"><text>常搜话题</text></view>
+      <view class="sc-tags">
+        <view class="sc-tag sc-tag--hot" wx:for="{{hot}}" wx:key="*this"
+              data-kw="{{item}}" bindtap="onTapKeyword">{{item}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ---------------- 结果分组 ---------------- -->
+  <block wx:else>
+    <view wx:if="{{!groups.length && !searching}}" class="sc-empty">
+      <view class="sc-empty__title">没找到「{{keyword}}」</view>
+      <view class="sc-empty__sub">
+        换个说法试试。名字打错一个字也能搜到，但整句话是搜不出东西的。
+      </view>
+      <view class="sc-empty__sub">课程/帖子/闲置/活动只搜索本机已加载内容；同学资料为全站搜索。</view>
+    </view>
+
+    <view class="card sc-group" wx:for="{{groups}}" wx:key="key">
+      <view class="sc-sec">
+        <text>{{item.title}} · {{item.total}}</text>
+        <text wx:if="{{item.more}}" class="sc-sec__act"
+              data-key="{{item.key}}" bindtap="onMore">查看全部</text>
+      </view>
+
+      <view class="sc-hit pressable" wx:for="{{item.items}}" wx:for-item="row" wx:key="id"
+            data-go="{{row.go}}" bindtap="onTapItem">
+        <view class="sc-hit__main">
+          <view class="sc-hit__title truncate">{{row.title}}</view>
+          <view wx:if="{{row.sub}}" class="sc-hit__sub truncate">{{row.sub}}</view>
+        </view>
+        <image class="sc-hit__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+      </view>
+    </view>
+  </block>
+
+</view>

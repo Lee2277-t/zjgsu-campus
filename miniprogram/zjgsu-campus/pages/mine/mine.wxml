@@ -1,0 +1,368 @@
+<!-- pages/mine/mine.wxml —— 我的（tab 页：原生导航条 + 原生 tabBar，不加 custom）
+     Web 参考：src/views/mine/MineHomeView.vue
+     这页现在只负责「看一眼、点进去」：顶部渐变个人区 / 三个可点数字卡 /
+     入口行（私信、同学、备忘、草稿，tone 分色）/ 隐私与偏好 / 应用说明与关于。
+     管理员专属的三样内容（内容审核、环境自检、复制身份 ID）都挂在 isMod 后面，
+     普通同学的这份列表里不该出现别人用不上的东西。
+     天气卡和「去树洞」卡已按需求撤掉：天气从课程/校园页都能看到，树洞在论坛顶部
+     本来就有两处入口，放在这里只是把首屏往下顶。
+     三份列表（课程评价 / 我的帖子 / 我的收藏）各占一个独立页面，从数字卡点进去；
+     列表和它的删除、清空、恢复展示都放在那边 —— 这页不再渲染长列表，
+     否则帖子攒到十几条，整页又会被撑到两屏开外。
+     行分组用 app.wxss 的 .row + .card--flush（分隔由 .row + .row 给出）。
+     数据字段沿用 mine.js：user / myReviews / myPosts / favoriteCount / draftCount /
+     unreadChat / unreadReplies / memoStreak / friendCount / reqCount / isMod / registered。
+     红点：入口行尾的 .mn-dot（私信未读、待处理申请）+ 数字卡右上角的 .mn-dot--stat
+     （有人回了我的帖子），判定与清除规则统一在 utils/unread.js，模板只负责摆。 -->
+<page-meta page-style="{{themeStyle}}" />
+<view class="container mn-page">
+
+  <!-- ---------------- 个人区：整块可点，进「编辑资料」 ---------------- -->
+  <view
+    class="mn-hero pressable"
+    hover-class="mn-hero--hover"
+    hover-stay-time="80"
+    bindtap="onEditProfile"
+  >
+    <view class="mn-hero__row">
+      <view class="mn-hero__avatar">
+        <!-- 判断的是「有没有头像地址且它真的能加载出来」：以前只看
+             user.avatar 有没有值，地址过期或断网时就是一个空圆框，
+             下面的 wx:else 首字母兜底永远走不到。 -->
+        <image show-menu-by-longpress
+          wx:if="{{user.avatar && !avaFail}}"
+          class="mn-hero__avatar-img"
+          src="{{user.avatar}}"
+          mode="aspectFill"
+          binderror="onAvaError"
+        ></image>
+        <view wx:else class="mn-hero__avatar-text">{{user.avatarText || '我'}}</view>
+      </view>
+
+      <view class="mn-hero__main">
+        <view class="mn-hero__name-row">
+          <text class="mn-hero__name truncate">{{user.nickName}}</text>
+          <text wx:if="{{registered}}" class="mn-hero__badge">已认证</text>
+        </view>
+        <view wx:if="{{user.college}}" class="mn-hero__line truncate">{{user.college}}</view>
+        <view wx:if="{{user.motto}}" class="mn-hero__line mn-hero__line--sub truncate">{{user.motto}}</view>
+      </view>
+
+      <image class="mn-hero__go" src="/assets/icons/chevron-right--white.svg" mode="aspectFit" />
+    </view>
+
+    <view class="mn-hero__edit">编辑个人资料</view>
+  </view>
+
+  <!-- 头像 / 昵称没设过时提示一下：同学按昵称找人，光靠默认名等于隐身 -->
+  <view
+    wx:if="{{profileIncomplete}}"
+    class="card mn-tip pressable"
+    hover-class="mn-tip--hover"
+    hover-stay-time="80"
+    bindtap="onEditProfile"
+  >
+    <image class="mn-tip__icon" src="/assets/icons/sparkles--amber.svg" mode="aspectFit" />
+    <view class="mn-tip__text">
+      <view class="mn-tip__title">完善一下头像，同学更容易找到你</view>
+      <view class="mn-tip__sub">点这里设置头像和昵称，选好的头像会自动保存到云端</view>
+    </view>
+  </view>
+
+  <!-- ---------------- 全站搜索入口 ----------------
+       课程 / 论坛 / 闲置 / 活动 / 同学各自有搜索，但入口分散在五个 tab 里 ——
+       想找「上次看到的那个兼职帖」得先猜它在哪个 tab。
+       这里不是搜索框本身，是一个「看起来像搜索框」的入口：
+       真正输入的关键词在独立页里处理，因为结果要分组展示五个模块，
+       在当前页原地展开会把这一屏撑爆。 -->
+  <view
+    class="mn-search pressable"
+    hover-class="mn-search--hover"
+    hover-stay-time="80"
+    bindtap="onSearch"
+  >
+    <image class="mn-search__icon" src="/assets/icons/search--muted.svg" mode="aspectFit" />
+    <text class="mn-search__ph">搜索课程、帖子、闲置、活动、同学</text>
+  </view>
+
+  <!-- ---------------- 三个数字卡：每个都点得动 ----------------
+       以前这三张卡只是「显示器」——数字看得见、点不动，真正的入口是页面下方
+       那两条长列表，用户得先滑过一屏才知道去哪儿看。
+       现在卡片自己就是入口，点进去是各自的完整列表页（评价 / 帖子 / 收藏）。
+       标签后面跟一枚小箭头，是「可点」的唯一信号 —— 不加这枚箭头，
+       卡片长得和上面那块天气卡一模一样，没人会去点它。 -->
+  <view class="mn-stats">
+    <view
+      class="card mn-stat pressable"
+      hover-class="mn-stat--hover"
+      hover-stay-time="80"
+      bindtap="onStatReviews"
+    >
+      <view class="mn-stat__num scene-brand">{{myReviews.length}}</view>
+      <view class="mn-stat__label">
+        <text>课程评价</text>
+        <image class="mn-stat__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+      </view>
+    </view>
+
+    <view
+      class="card mn-stat pressable"
+      hover-class="mn-stat--hover"
+      hover-stay-time="80"
+      bindtap="onStatPosts"
+    >
+      <view class="mn-stat__num scene-forum">{{myPosts.length}}</view>
+      <view class="mn-stat__label">
+        <text>我的帖子</text>
+        <image class="mn-stat__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+      </view>
+      <!-- 帖子列表已经搬去独立页，没人回复的时候这枚红点是唯一提示，
+          所以它必须留在卡片上（判定见 utils/unread.js 的已读水位） -->
+      <view wx:if="{{unreadReplies > 0}}" class="mn-dot mn-dot--stat"></view>
+    </view>
+
+    <view
+      class="card mn-stat pressable"
+      hover-class="mn-stat--hover"
+      hover-stay-time="80"
+      bindtap="onStatFavorites"
+    >
+      <view class="mn-stat__num scene-market">{{favoriteCount}}</view>
+      <view class="mn-stat__label">
+        <text>我的收藏</text>
+        <image class="mn-stat__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+      </view>
+    </view>
+  </view>
+
+  <!-- ---------------- 常用入口：按 tone 分色图标方块
+       「我的收藏」已经并进上方数字卡，不再单列一行 ——
+       同一件事在一屏里出现两次，用户会犹豫「这俩是不是不一样」 -->
+  <view class="card card--flush mn-rows">
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onChats">
+      <view class="mn-ico mn-ico--brand">
+        <image class="mn-ico__img" src="/assets/icons/message-circle--brand.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">我的私信</view>
+        <view wx:if="{{unreadChat > 0}}" class="mn-row__desc truncate">{{unreadChat}} 条未读</view>
+      </view>
+      <view wx:if="{{unreadChat > 0}}" class="mn-dot"></view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onFriends">
+      <view class="mn-ico mn-ico--campus">
+        <image class="mn-ico__img" src="/assets/icons/users--campus.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">我的同学</view>
+        <view wx:if="{{reqCount > 0 || friendCount > 0}}" class="mn-row__desc truncate">
+          {{reqCount > 0 ? reqCount + ' 条申请待处理' : friendCount + ' 位同学'}}
+        </view>
+      </view>
+      <view wx:if="{{reqCount > 0}}" class="mn-dot"></view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <!-- 站内通知中心：订阅消息是一次性的（用户授权一次只能推一条），
+         断了就只能靠红点。没有这一条，「谁申请加我 / 谁解除了好友」这类
+         发生在别人动作里的事件，用户永远不知道发生过 -->
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onNotify">
+      <view class="mn-ico mn-ico--brand">
+        <image class="mn-ico__img" src="/assets/icons/bell--brand.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">消息通知</view>
+        <view wx:if="{{unreadNotify > 0}}" class="mn-row__desc truncate">{{unreadNotify}} 条未读</view>
+      </view>
+      <view wx:if="{{unreadNotify > 0}}" class="mn-dot"></view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="goMemo">
+      <view class="mn-ico mn-ico--campus">
+        <image class="mn-ico__img" src="/assets/icons/notebook-pen--campus.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">我的备忘</view>
+        <view wx:if="{{memoStreak}}" class="mn-row__desc truncate">已连续 {{memoStreak}} 天</view>
+      </view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onDrafts">
+      <view class="mn-ico mn-ico--forum">
+        <image class="mn-ico__img" src="/assets/icons/file-text--forum.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">我的草稿</view>
+        <view wx:if="{{draftCount > 0}}" class="mn-row__desc truncate">{{draftCount}} 篇没写完</view>
+      </view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+  </view>
+
+  <!-- ---------------- 隐私与内容入口 ----------------
+       对普通同学这里只显示「隐私保护指引」一行；「内容审核」在审核员手机上补上 -->
+  <view class="card card--flush mn-rows">
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onOpenPrivacy">
+      <view class="mn-ico mn-ico--slate">
+        <image class="mn-ico__img" src="/assets/icons/lock--muted.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">隐私保护指引</view>
+      </view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <!-- 内容审核：只有审核员看得见。
+         以前这一行常显，理由是「万一谁想当审核员，点进去能看到成为审核员的引导」——
+         但自助登记早在云端就关掉了（SELF_ADMIN=false），点进去也只是被挡回来；
+         留着它的唯一后果是：全校每个同学的「我的」页里都摆着一个他用不上、
+         还会让人怀疑「我是不是被人审核了」的入口。
+         真正的门禁依旧在云函数那边（MODERATORS 环境变量），这边只决定显不显示 -->
+    <view
+      wx:if="{{isMod}}"
+      class="row pressable"
+      hover-class="mn-row--hover"
+      hover-stay-time="80"
+      bindtap="onModeration"
+    >
+      <view class="mn-ico mn-ico--slate">
+        <image class="mn-ico__img" src="/assets/icons/shield-check--muted.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">内容审核</view>
+      </view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+  </view>
+
+  <!-- 我的课程评价 / 我的帖子 两块列表已搬去独立页
+       （pages/mine/reviews、pages/mine/posts，都从上方数字卡点进去）。
+       留在这一页的代价是：帖子攒到十几条，整页就被撑到两屏开外 ——
+       而它们和数字卡本来就在说同一件事，一处入口足够。
+       删除 / 清空 / 恢复展示这些动手操作也一并搬了过去，
+       所以这页现在只负责「看一眼、点进去」。 -->
+
+  <!-- ---------------- 应用说明 / 环境自检 / 清除本机缓存 ---------------- -->
+  <view class="card card--flush mn-rows">
+    <!-- 深色模式开关。放在「偏好」这一组的最前面，和下面的触感反馈是一类东西：
+         只属于这台手机的选择，跟账号、云端都无关。
+         没拨过时是「跟随系统」（开关状态 = 系统当前的样子）；
+         一旦拨动就变成明确选择，之后再进小程序都按这个来，不再看系统。
+         为什么不给「跟随系统」第三个选项：两态开关是用户一眼就懂的，
+         第三个状态得靠一行小字解释，反而更绕。想回到跟随系统，
+         在「账号与数据 → 重置本机缓存」里会一并清掉这个偏好 -->
+    <view class="row">
+      <view class="mn-ico mn-ico--slate">
+        <image class="mn-ico__img" src="/assets/icons/moon--muted.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">深色模式</view>
+      </view>
+      <switch class="mn-switch" checked="{{darkOn}}" color="#2b5aed" bindchange="onToggleDark" />
+    </view>
+
+    <!-- 触感反馈开关。放在这一组的第一个：它跟下面几项一样属于「这台手机上的偏好」，
+         而不是云端数据。整行不可点 —— 一点行就误触开关，只有开关本身响应。
+         为什么要有它：iOS 关掉系统震动后 vibrateShort 是静默失效的，
+         我们查不到用户关没关，只能把这个决定权还给他本人 -->
+    <view class="row">
+      <view class="mn-ico mn-ico--slate">
+        <image class="mn-ico__img" src="/assets/icons/vibrate--muted.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">触感反馈</view>
+      </view>
+      <switch class="mn-switch" checked="{{hapticOn}}" color="#2b5aed" bindchange="onToggleHaptic" />
+    </view>
+
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onGuide">
+      <view class="mn-ico mn-ico--brand">
+        <image class="mn-ico__img" src="/assets/icons/sparkles--brand.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">应用说明</view>
+      </view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <view
+      wx:if="{{isMod}}"
+      class="row pressable"
+      hover-class="mn-row--hover"
+      hover-stay-time="80"
+      bindtap="onDiag"
+    >
+      <view class="mn-ico mn-ico--slate">
+        <image class="mn-ico__img" src="/assets/icons/loader--muted.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">环境自检</view>
+      </view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onClearCache">
+      <view class="mn-ico mn-ico--slate">
+        <image class="mn-ico__img" src="/assets/icons/trash-2--muted.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">清除本机缓存</view>
+        <view class="mn-row__desc truncate">让页面恢复正常速度（云端数据不受影响）</view>
+      </view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <!-- 「清除本机缓存」和「账号与数据」必须分开列。
+         用户想「清掉重来」时最常见的误判就是以为清缓存等于清账号 ——
+         两个入口挨着摆，看名字就能分清哪个动的是云端 -->
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onAccount">
+      <view class="mn-ico mn-ico--slate">
+        <image class="mn-ico__img" src="/assets/icons/user-round--profile.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">账号与数据</view>
+        <view class="mn-row__desc truncate">
+          {{cancelPending ? '注销申请中，还有 ' + cancelLeftDays + ' 天生效（可撤销）' : '注销账号、查看数据留存规则'}}
+        </view>
+      </view>
+      <view wx:if="{{cancelPending}}" class="mn-dot"></view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <view class="row pressable" hover-class="mn-row--hover" hover-stay-time="80" bindtap="onAbout">
+      <view class="mn-ico mn-ico--slate">
+        <image class="mn-ico__img" src="/assets/icons/info--muted.svg" mode="aspectFit" />
+      </view>
+      <view class="mn-row__main">
+        <view class="mn-row__title">关于</view>
+        <view class="mn-row__desc truncate">版本号、免责声明、联系方式</view>
+      </view>
+      <image class="mn-row__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+  </view>
+
+  <!-- ---------------- 身份没拿到时的警示条 ---------------- -->
+  <view
+    wx:if="{{!registered}}"
+    class="mn-alert pressable"
+    hover-class="mn-alert--hover"
+    hover-stay-time="80"
+    bindtap="onRegAlert"
+  >
+    <view class="mn-alert__title">还没拿到身份，有些功能会跟着出问题</view>
+    <!-- 文案刻意不写「发帖会失败」：服务端认人靠的是微信塞给云函数的身份，
+         跟客户端拿没拿到 openid 没关系。
+         点这里去哪儿分人：审核员要看缺失清单（自检），同学只需要一个能说话的窗口（关于页） -->
+    <view class="mn-alert__hint">{{isMod ? '多半是 login 云函数没部署（表现为：预览正常、体验版同学全废）。点这里跑一次「环境自检」看缺什么' : '点这里联系我们，附上这段提示会更快定位'}}</view>
+  </view>
+
+  <view class="mn-foot">
+    <image class="mn-foot__icon" src="/assets/icons/life-buoy--faint.svg" mode="aspectFit" />
+    <text class="faint">商砖小站 · 高保真页面骨架</text>
+  </view>
+</view>

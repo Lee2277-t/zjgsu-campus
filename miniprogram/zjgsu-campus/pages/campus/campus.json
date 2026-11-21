@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "活动",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "net-tip": "/components/ui/net-tip/index"
+  }
+}

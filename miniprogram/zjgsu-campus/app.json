@@ -1,0 +1,169 @@
+{
+  "pages": [
+    "pages/course/list/list",
+    "pages/forum/list/list",
+    "pages/market/list/list",
+    "pages/campus/campus",
+    "pages/mine/mine"
+  ],
+  "subPackages": [
+    {
+      "root": "pages/tool",
+      "name": "tool",
+      "pages": [
+        "calendar/calendar",
+        "resources/resources",
+        "places/places",
+        "memo/memo"
+      ]
+    },
+    {
+      "root": "pages/admin",
+      "name": "admin",
+      "pages": [
+        "moderation/moderation"
+      ]
+    },
+    {
+      "root": "pages/user",
+      "name": "user",
+      "pages": [
+        "profile/profile",
+        "card/card",
+        "friends/friends",
+        "chats/chats",
+        "chat/chat",
+        "account/account",
+        "about/about",
+        "notify/notify",
+        "guide/guide"
+      ]
+    },
+    {
+      "root": "pages/forum/comment-appeal",
+      "name": "appeal",
+      "pages": [
+        "comment-appeal"
+      ]
+    },
+    {
+      "root": "pages/forum/hidden",
+      "name": "hidden",
+      "pages": [
+        "hidden"
+      ]
+    },
+    {
+      "root": "sub",
+      "name": "content",
+      "pages": [
+        "course/detail/detail",
+        "course/review/review",
+        "course/teacher/teacher",
+        "course/add/add",
+        "forum/detail/detail",
+        "forum/post/post",
+        "forum/edit/edit",
+        "forum/hole/hole",
+        "market/detail/detail",
+        "market/edit/edit",
+        "market/mine/mine",
+        "campus/add/add",
+        "campus/event/event",
+        "campus/mine/mine",
+        "campus/blindbox/blindbox",
+        "mine/favorites/favorites",
+        "mine/drafts/drafts",
+        "mine/posts/posts",
+        "mine/reviews/reviews",
+        "search/search"
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/mine/mine": {
+      "network": "all",
+      "packages": [
+        "user"
+      ]
+    },
+    "pages/campus/campus": {
+      "network": "all",
+      "packages": [
+        "tool"
+      ]
+    },
+    "pages/forum/list/list": {
+      "network": "all",
+      "packages": [
+        "hidden",
+        "content"
+      ]
+    },
+    "sub/forum/detail/detail": {
+      "network": "all",
+      "packages": [
+        "appeal"
+      ]
+    }
+  },
+  "window": {
+    "backgroundTextStyle": "@bgTxtStyle",
+    "navigationBarBackgroundColor": "@navBgColor",
+    "navigationBarTitleText": "校园小站",
+    "navigationBarTextStyle": "@navTxtStyle",
+    "backgroundColor": "@bgColor"
+  },
+  "tabBar": {
+    "color": "@tabFontColor",
+    "selectedColor": "@tabSelectedColor",
+    "backgroundColor": "@tabBgColor",
+    "borderStyle": "@tabBorderStyle",
+    "list": [
+      {
+        "pagePath": "pages/course/list/list",
+        "text": "课程",
+        "iconPath": "assets/tabbar/course.png",
+        "selectedIconPath": "assets/tabbar/course-on.png"
+      },
+      {
+        "pagePath": "pages/forum/list/list",
+        "text": "论坛",
+        "iconPath": "assets/tabbar/forum.png",
+        "selectedIconPath": "assets/tabbar/forum-on.png"
+      },
+      {
+        "pagePath": "pages/market/list/list",
+        "text": "闲置",
+        "iconPath": "assets/tabbar/market.png",
+        "selectedIconPath": "assets/tabbar/market-on.png"
+      },
+      {
+        "pagePath": "pages/campus/campus",
+        "text": "校园",
+        "iconPath": "assets/tabbar/campus.png",
+        "selectedIconPath": "assets/tabbar/campus-on.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "assets/tabbar/mine.png",
+        "selectedIconPath": "assets/tabbar/mine-on.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "darkmode": true,
+  "themeLocation": "theme.json",
+  "__usePrivacyCheck__": true,
+  "requiredPrivateInfos": [
+    "chooseLocation"
+  ],
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于在地图上显示你的位置，并在地图上选点添加校园地点"
+    }
+  },
+  "lazyCodeLoading": "requiredComponents"
+}

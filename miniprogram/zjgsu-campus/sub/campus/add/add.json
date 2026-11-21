@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "发起校园活动",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "app-header": "/components/ui/app-header/index"
+  }
+}

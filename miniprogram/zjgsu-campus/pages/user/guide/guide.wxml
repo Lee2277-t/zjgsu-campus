@@ -1,0 +1,44 @@
+<!-- pages/user/guide —— 应用说明
+     三段：应用简介 / 核心功能 / 使用须知。
+     改文案同步 guide.js；图标走 assets/icons/<name>--brand.svg。
+     全文控制在 300 字上下（test-fix-20261017.cjs 会真数一遍），
+     所以这里不再摆「常见操作」「小工具入口」两块 ——
+     那份明细比功能描述更容易过期，也不值得占这 300 字的预算 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="应用说明" showBack />
+
+<view class="container gd">
+  <view class="gd-hero">
+    <view class="title-lg gd-hero-title">商砖小站 · 应用说明</view>
+    <view class="gd-hero-sub">浙江工商大学校园小程序</view>
+    <view class="gd-hero-date">最后更新 {{updated}}</view>
+  </view>
+
+  <view class="card">
+    <view class="gd-sec">应用简介</view>
+    <view class="gd-para">{{intro}}</view>
+  </view>
+
+  <view class="card">
+    <view class="gd-sec">核心功能</view>
+    <view class="gd-block" wx:for="{{modules}}" wx:key="name">
+      <view class="gd-tab-head">
+        <view class="gd-tab-icon bg-brand-50">
+          <image class="gd-tab-icon-img" src="/assets/icons/{{item.icon}}--brand.svg" mode="aspectFit" />
+        </view>
+        <view class="gd-tab-text">
+          <view class="gd-tab-name">{{item.name}}</view>
+          <!-- 说明不截断：这页一共就 300 字，吞掉几个字等于白写 -->
+          <view class="gd-mod-desc">{{item.desc}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card gd-warn">
+    <view class="gd-sec">使用须知</view>
+    <view class="gd-line gd-line--warn" wx:for="{{rules}}" wx:key="*this">{{item}}</view>
+  </view>
+
+  <base-button block bindtap="onGoForum">去逛逛论坛</base-button>
+</view>

@@ -1,0 +1,146 @@
+<!-- pages/user/about —— 关于。
+     三个版本号（小程序 / 云函数 / 基础库）摆在一起，并且给一个「复制」按钮：
+     出问题时让同学报版本，他不该需要去开发者工具里翻。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="关于" showBack />
+
+<view class="container ab">
+
+  <view class="ab-hero">
+    <view class="ab-logo">
+      <image class="ab-logo-img" src="/assets/brand/icon-app-512.png" mode="aspectFit" />
+    </view>
+    <view class="ab-name">商砖小站</view>
+    <view class="ab-sub">浙江工商大学校园小程序</view>
+    <view class="ab-ver">版本 {{appVersion}}</view>
+  </view>
+
+  <!-- ---------------- 版本信息 ----------------
+       云函数那一栏在「本地新、云端旧」时高亮 —— 这是排查时最关键的一条信息，
+       而它恰恰是最难被用户想到的一条 -->
+  <view class="card">
+    <view class="ab-sec">版本信息</view>
+
+    <view class="ab-row">
+      <text class="ab-row__k">小程序</text>
+      <text class="ab-row__v">{{appVersion}}</text>
+    </view>
+    <!-- 云函数版本这一栏只有审核员看得见。
+         它对同学的用处是零，附带的那句「去开发者工具右键部署」更是纯施工用语 ——
+         一个普通用户读到这句话，只会得出「这个小程序没人维护」的结论。
+         排查「本地新、云端旧」这件事本来就只发生在干活的人身上 -->
+    <view wx:if="{{isMod}}" class="ab-row">
+      <text class="ab-row__k">云函数</text>
+      <text class="ab-row__v {{buildStale ? 'ab-row__v--warn' : ''}}">
+        {{checking ? '读取中…' : (cloudBuild || '连不上，稍后重试')}}
+      </text>
+    </view>
+    <view class="ab-row">
+      <text class="ab-row__k">基础库</text>
+      <text class="ab-row__v">{{baseLibrary || '未知'}}</text>
+    </view>
+
+    <view wx:if="{{isMod && buildStale}}" class="ab-warn">
+      云端云函数还是旧版（期望 {{expectBuild}}，实际 {{cloudBuild}}）。
+      部分新功能会没有反应：去开发者工具里右键 cloudfunctions/user →
+      上传并部署（云端安装依赖）。
+    </view>
+
+    <view wx:if="{{isMod && cloudFeatures.length}}" class="ab-feats">
+      <view class="ab-feats__t">云端已具备的能力</view>
+      <view class="ab-feats__list">
+        <text class="ab-feat" wx:for="{{cloudFeatures}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <base-button class="ab-btn" variant="ghost" block size="sm" bindtap="onCopyBuild">
+      复制版本信息
+    </base-button>
+  </view>
+
+  <!-- ---------------- 免责声明 ----------------
+       个人主体能做什么、不能做什么，如实写清楚。
+       写着有、实际没有，比不写更招骂 -->
+  <view class="card">
+    <view class="ab-sec">免责声明</view>
+    <view class="ab-p">
+      本小程序由在校同学自主开发与维护，<text class="ab-strong">非浙江工商大学官方应用</text>，
+      也不代表学校任何部门的意见。
+    </view>
+    <view class="ab-p">
+      站内的课程评价、帖子、闲置信息均由用户自行发布，平台不为其真实性背书。
+      涉及交易请自行核实对方与物品，<text class="ab-strong">本小程序不提供在线支付、担保交易与配送</text>，
+      任何要求先转账的说法都与本小程序无关。
+    </view>
+    <view class="ab-p">
+      官网公告、招聘会、校历等来自学校公开页面，同步可能存在延迟或解析误差，
+      以官网原文为准。
+    </view>
+    <view class="ab-p">
+      内容违规可以在对应内容（帖子 / 课程评价 / 留言、私信）上直接举报，
+      也可以按上面的邮箱通知我们，处置结果会通过站内通知回复。
+    </view>
+  </view>
+
+  <!-- ---------------- 侵权投诉通道 ----------------
+       民法典 1195 条：权利人通知 → 平台及时删除 / 屏蔽 → 对「扩大部分」不再担责。
+       这条通道就是「避风港」的前提：通知送不进来，就谈不上及时处置，
+       一旦闹到法院，平台对全部损害担责的风险会明显上升。
+       所以这里的承诺必须写死（多久响应、怎么处理），空话写上去等于没写，
+       反而能证明「明知而未作为」 -->
+  <view class="card">
+    <view class="ab-sec">侵权投诉与内容处理</view>
+    <view class="ab-p">
+      如果你认为站内内容（课程评价、帖子、留言）侵害了你的名誉、隐私或其他合法权益，
+      可以通过下面的邮箱通知我们。邮件里请写清这三件事，少一件都会让核实多跑一趟：
+    </view>
+    <view class="ab-p ab-p--sm">1. 内容在哪儿：课程名 / 老师姓名 / 帖子截图或链接；</view>
+    <view class="ab-p ab-p--sm">2. 哪一部分不实或不当：指出具体句子，不用整篇摘抄；</view>
+    <view class="ab-p ab-p--sm">3. 你的身份与联系方式，便于我们把处理结果回复给你。</view>
+    <view class="ab-p">
+      收到通知后我们会在<text class="ab-strong"> 48 小时内响应</text>，
+      <text class="ab-strong">7 个工作日内处理完毕</text>。
+      情况属实的一律先下架再核实，处理结果会同步回复。
+    </view>
+    <view class="ab-p">
+      站内内容一律留存发布者标识（OpenID）与发布时间。
+      <text class="ab-strong">匿名发布只是不对外显示昵称</text>，
+      不代表发布者无法被找到；依据法律规定或司法机关要求，我们会如实提供。
+    </view>
+    <view class="ab-row ab-row--tap" bindtap="onCopyContact">
+      <text class="ab-row__k">投诉邮箱</text>
+      <text class="ab-row__v ab-row__v--link">{{contact}}</text>
+    </view>
+  </view>
+
+  <!-- ---------------- 联系方式 ---------------- -->
+  <view class="card">
+    <view class="ab-sec">联系我们</view>
+    <view class="ab-p">
+      功能建议、内容申诉、账号问题，都可以通过下面的方式找到我们。
+      涉及具体内容时请附上版本信息与截图，能省掉一半来回。
+    </view>
+    <view class="ab-row ab-row--tap" bindtap="onCopyContact">
+      <text class="ab-row__k">邮箱</text>
+      <text class="ab-row__v ab-row__v--link">{{contact}}</text>
+    </view>
+    <base-button class="ab-btn" variant="ghost" block size="sm" bindtap="onGuide">
+      查看应用说明
+    </base-button>
+  </view>
+
+  <!-- ---------------- 许可 ----------------
+       图标不是自己画的，就要写清楚从哪来 —— 这是许可要求，也是给接手的人留线索 -->
+  <view class="card">
+    <view class="ab-sec">开源与许可</view>
+    <view class="ab-p ab-p--sm">
+      界面图标来自 Lucide（ISC 许可）的线性图标集，按本项目配色重新着色为 SVG。
+      小程序图标为自行绘制。
+    </view>
+    <view class="ab-p ab-p--sm">
+      本项目的自动处置阈值、屏蔽词表均以服务端为准；小程序端的展示文案可能与
+      云端存在几分钟延迟。
+    </view>
+  </view>
+
+</view>

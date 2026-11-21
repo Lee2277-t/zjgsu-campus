@@ -1,0 +1,244 @@
+/* sub/campus/event/event —— 活动详情
+   底部操作条用 .fixed-bar（position:fixed）贴在视口底部，
+   所以本页任何容器都不加 transform，否则 fixed 会退化成相对定位。 */
+
+/* 给固定底栏留位，最后一条内容不会被压住 */
+.ev-page {
+  padding-bottom: 200rpx;
+}
+
+.ev-empty-art {
+  width: 150rpx;
+  height: 150rpx;
+  margin-bottom: 16rpx;
+}
+
+.ev__top {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 44rpx;
+}
+.ev__tag--official {
+  background: var(--c-brand-soft);
+  color: var(--c-brand-deep);
+}
+.ev__badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-campus-deep);
+  background: var(--c-campus-soft);
+  border-radius: var(--r-pill);
+  padding: 8rpx 20rpx;
+}
+.ev__badge--joined {
+  color: var(--c-brand-deep);
+  background: var(--c-brand-soft);
+}
+
+.ev__title {
+  margin-top: 16rpx;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.45;
+}
+
+.ev__row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  min-width: 0;
+}
+.ev__row-icon {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+}
+.ev__desc {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid var(--c-line);
+  font-size: var(--fs-body);
+  color: var(--c-muted);
+  line-height: 1.75;
+}
+
+/* 浏览人数：接在描述后面的一行弱化小字，不抢时间/地点的位置 */
+.ev__views {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+
+.ev__sec-title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+/* 联系方式：整块可点，右侧「复制」只是提示，热区留给整行 */
+.ev-contact {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 12rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-brand-soft);
+}
+.ev-contact__icon {
+  width: 34rpx;
+  height: 34rpx;
+  flex-shrink: 0;
+}
+.ev-contact__text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  color: var(--c-brand-deep);
+}
+.ev-contact__go {
+  flex-shrink: 0;
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  color: var(--c-brand);
+}
+
+/* 被举报暂停展示：只有作者看得到。
+   琥珀色而不是红色 —— 这是「先别展示、等你确认」，不是判定违规 */
+.ev-paused {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--c-amber-soft);
+}
+.ev-paused__title { font-size: var(--fs-body); font-weight: 600; color: var(--c-text); }
+.ev-paused__desc {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+  color: var(--c-muted);
+}
+.ev-paused__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--hit);
+  margin-top: var(--sp-3);
+  padding: 0 var(--sp-5);
+  border-radius: var(--r-pill);
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+}
+.ev-paused__btn--hover { opacity: 0.9; }
+
+.ev-del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 96rpx;
+  margin-top: 8rpx;
+  padding: 24rpx;
+  border-radius: var(--r-xl);
+  background: var(--c-danger-soft);
+  font-size: var(--fs-body);
+  color: var(--c-danger);
+}
+
+/* 举报入口：只给同学发起的活动，做得轻，别跟报名抢注意力 */
+.ev-report {
+  margin-top: var(--sp-4);
+  padding: var(--sp-2) 0;
+  text-align: center;
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+  text-decoration: underline;
+}
+
+/* 招聘会收藏条。放在「信息来源」下面、删除按钮上面 ——
+   招聘会不会走到删除那一块（不是自己发的），所以两者不会挤在一起。 */
+.ev-fav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  border-radius: var(--r-l);
+  background: #f4f7fc;
+  font-size: var(--fs-body);
+  color: #4a5568;
+}
+.ev-fav--hover { opacity: 0.72; }
+.ev-fav--on {
+  background: #fff8e8;
+}
+.ev-fav--on .ev-fav__text {
+  font-weight: 600;
+  color: #b8860b;
+}
+.ev-fav__icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+.ev-fav__hint {
+  margin-top: 16rpx;
+  font-size: var(--fs-aux);
+  line-height: 1.6;
+  color: var(--c-muted);
+}
+.ev-del__icon {
+  width: 34rpx;
+  height: 34rpx;
+}
+
+/* --------------------------------------------------------------------------
+   底部操作条
+   -------------------------------------------------------------------------- */
+.ev-bar {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--c-card);
+  border-top: 2rpx solid var(--c-line);
+  box-shadow: 0 -6rpx 24rpx rgba(23, 32, 51, 0.06);
+}
+.ev-bar__btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 96rpx;
+  margin: 0 auto;
+  padding: 0 24rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-campus);
+  color: var(--c-on-strong);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+.ev-bar__icon {
+  width: 34rpx;
+  height: 34rpx;
+  flex-shrink: 0;
+}
+.ev-bar__btn--joined {
+  background: var(--c-campus-soft);
+  color: var(--c-campus-deep);
+}
+
+.ev-article__source { margin-bottom: 12rpx; font-size: var(--fs-tag); }
+.ev-article__state { padding: 16rpx 0; font-size: var(--fs-sub); }
+.ev-article__body { margin-top: 8rpx; }

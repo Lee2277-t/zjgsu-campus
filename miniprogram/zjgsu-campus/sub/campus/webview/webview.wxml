@@ -1,0 +1,11 @@
+<page-meta page-style="{{themeStyle}}" />
+<web-view wx:if="{{url && !invalid && !failed}}" src="{{url}}" binderror="onError"></web-view>
+<view wx:else class="container">
+  <view class="card">
+    <view class="title-lg">官网原文</view>
+    <view class="hint">{{invalid ? '这个链接不在学校官网白名单内。' : '当前无法在小程序内打开官网页面。'}}</view>
+    <view class="muted">链接已复制，可以粘贴到浏览器查看。</view>
+    <view class="btn-ghost tap webview__retry" bindtap="onCopy">再次复制链接</view>
+    <view class="btn-ghost tap webview__retry" bindtap="goBack">返回</view>
+  </view>
+</view>

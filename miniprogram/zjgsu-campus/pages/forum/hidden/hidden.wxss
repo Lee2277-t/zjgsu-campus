@@ -1,0 +1,86 @@
+/* pages/forum/hidden/hidden.wxss —— 被举报暂停展示的内容 */
+
+.tip-card {
+  display: block;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  border-radius: var(--r-xl);
+  background: var(--c-market-soft);
+  border: 2rpx solid #ffe1a6;
+}
+.tip-card__head { display: flex; align-items: flex-start; gap: 16rpx; }
+.tip-card__icon {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+}
+.tip-card__icon-img { width: 36rpx; height: 36rpx; }
+.tip-card__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-amber-deep);
+  line-height: 1.5;
+}
+.tip-card__body {
+  margin-top: 16rpx;
+  padding-left: 80rpx;
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+  color: #b08a3e;
+}
+
+.post__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 44rpx;
+  margin-bottom: 12rpx;
+}
+.post__mini-icon { width: 24rpx; height: 24rpx; }
+.post__lock {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 4rpx 20rpx;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-tag);
+  color: var(--c-market-deep);
+  background: var(--c-market-soft);
+}
+
+.post__title { margin-bottom: 8rpx; }
+.post__content {
+  font-size: var(--fs-sub);
+  line-height: 1.65;
+  color: var(--c-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.post__foot {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid var(--c-line);
+}
+.post__author {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-aux);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.post__stat { flex-shrink: 0; font-size: var(--fs-tag); }

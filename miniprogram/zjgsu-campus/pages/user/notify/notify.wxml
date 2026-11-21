@@ -1,0 +1,64 @@
+<!-- pages/user/notify —— 消息通知。
+     未读用颜色区分（图标走 brand 色 + 左侧未读点），不用「加粗」——
+     中文在小字号下加粗几乎看不出差别，而通知列表恰恰是快速扫的地方。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="消息通知" showBack />
+
+<view class="container nt">
+
+  <!-- 顶部一行：未读数 + 全部已读。
+       没有未读时整行不渲染 —— 常驻一个「全部已读」按钮会让人以为还有没读的 -->
+  <view wx:if="{{unread > 0}}" class="card nt-bar">
+    <text class="nt-bar__num">{{unread}} 条未读</text>
+    <text class="nt-bar__act" bindtap="onReadAll">全部标为已读</text>
+  </view>
+
+  <!-- 云端读不到 ≠ 没有通知。两者必须长得不一样，
+       否则用户会把「读不到」当成「没人理我」，然后放弃看这一页 -->
+  <view wx:if="{{offline}}" class="card nt-warn">
+    <view class="nt-warn__title">暂时读不到通知</view>
+    <view class="nt-warn__sub">
+      多半是云函数还没重新部署，或者网络不通。这一页的数据全部来自云端，本机没有备份。
+    </view>
+    <base-button class="nt-warn__btn" variant="ghost" block size="sm" bindtap="onRetry">重试</base-button>
+  </view>
+
+  <view wx:elif="{{degraded}}" class="nt-tip">
+    这次只读到了一部分通知，下拉重试可以拿到完整的。
+  </view>
+
+  <block wx:elif="{{loading}}">
+    <view class="nt-loading">读取中…</view>
+  </block>
+
+  <block wx:elif="{{list.length}}">
+    <view class="card card--flush nt-list">
+      <view class="nt-item pressable" wx:for="{{list}}" wx:key="id"
+            wx:for-index="i" data-i="{{i}}" bindtap="onTap">
+        <view class="nt-item__ico {{item.read ? 'nt-item__ico--read' : 'nt-item__ico--unread'}}">
+          <image class="nt-item__img"
+                 src="/assets/icons/{{item.icon}}--{{item.read ? 'muted' : 'brand'}}.svg"
+                 mode="aspectFit" />
+        </view>
+        <view class="nt-item__main">
+          <view class="nt-item__title truncate">{{item.title}}</view>
+          <view wx:if="{{item.body}}" class="nt-item__body clamp2">{{item.body}}</view>
+          <view class="nt-item__time">{{item.time}}</view>
+        </view>
+        <view wx:if="{{!item.read}}" class="nt-dot"></view>
+      </view>
+    </view>
+    <!-- 翻页：通知攒多了以前永远只显示最近 50 条，更早的没有任何入口 -->
+    <view wx:if="{{loadingMore}}" class="load-more">加载中…</view>
+    <view wx:elif="{{hasMore}}" class="load-more">上拉加载更早的通知</view>
+  </block>
+
+  <view wx:else class="nt-empty">
+    <image class="nt-empty__img" src="/assets/icons/bell--muted.svg" mode="aspectFit" />
+    <view class="nt-empty__title">还没有通知</view>
+    <view class="nt-empty__sub">
+      有人回复你的帖子、申请加你为同学、或者你举报的内容有了处理结果时，会出现在这里。
+    </view>
+  </view>
+
+</view>

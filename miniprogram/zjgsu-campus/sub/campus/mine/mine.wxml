@@ -1,0 +1,60 @@
+<!-- sub/campus/mine/mine.wxml —— 我发起的活动（含已被暂停展示的那几条） -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="我发起的活动" showBack />
+
+<view class="container m-page">
+  <view wx:if="{{loading}}" class="m-hint">加载中…</view>
+
+  <view wx:elif="{{items.length === 0}}" class="m-empty">
+    <image class="m-empty__art" src="/assets/icons/calendar-days--faint.svg" mode="aspectFit" />
+    <view class="m-empty__title">还没发起过活动</view>
+    <view class="m-empty__desc">讲座、比赛、组队都可以发一条，同校的同学在校园页就能看到。</view>
+    <view class="m-empty__cta tap pressable" hover-class="m-empty__cta--hover" hover-stay-time="80" bindtap="goAdd">
+      去发起一个
+    </view>
+  </view>
+
+  <block wx:else>
+    <view
+      wx:for="{{items}}"
+      wx:key="id"
+      class="card m-item tap pressable"
+      hover-class="m-item--hover"
+      hover-stay-time="80"
+      data-id="{{item.id}}"
+      bindtap="goDetail"
+    >
+      <view class="m-item__top">
+        <text class="tag tag--campus">{{item.typeLabel}}</text>
+        <!-- 暂停展示要写在最显眼的位置：作者点进来就是为了知道它怎么了 -->
+        <text wx:if="{{item.paused}}" class="m-item__badge">已暂停展示</text>
+      </view>
+
+      <view class="m-item__title">{{item.title}}</view>
+
+      <view class="m-item__meta">
+        <image class="m-item__icon" src="/assets/icons/clock--muted.svg" mode="aspectFit" />
+        <text class="truncate">{{item.start || '时间待定'}}</text>
+      </view>
+      <view wx:if="{{item.location}}" class="m-item__meta">
+        <image class="m-item__icon" src="/assets/icons/map-pin--muted.svg" mode="aspectFit" />
+        <text class="truncate">{{item.location}}</text>
+      </view>
+
+      <view class="m-item__foot">
+        <text class="muted">{{item.countText}}</text>
+        <text wx:if="{{item.paused}}" class="m-item__hint">点开可以恢复</text>
+      </view>
+    </view>
+  </block>
+
+  <view
+    class="m-publish pressable"
+    hover-class="m-publish--hover"
+    hover-stay-time="80"
+    bindtap="goAdd"
+  >
+    <image class="m-publish__icon" src="/assets/icons/plus--campus.svg" mode="aspectFit" />
+    <text>再发起一个</text>
+  </view>
+</view>

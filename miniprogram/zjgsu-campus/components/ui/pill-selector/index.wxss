@@ -1,0 +1,60 @@
+/* components/ui/pill-selector/index.wxss —— 胶囊 999rpx，热区 88rpx */
+.ui-pill { width: 100%; }
+
+.ui-pill__row {
+  /* inline-flex 而非 flex：理由见 app.wxss 的 .chip-row 注释（iOS 横向滚动不换行） */
+  display: inline-flex;
+  gap: 16rpx;
+  white-space: nowrap;
+  padding-bottom: 4rpx;
+}
+
+.ui-pill__item {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 88rpx;
+  padding: 0 32rpx;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sub);
+  background: var(--c-card);
+  color: var(--c-muted);
+  border: 2rpx solid var(--c-line);
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.16s ease;
+}
+
+.ui-pill__item--hover { opacity: 0.72; }
+
+.ui-pill__item--on {
+  border-width: 0;
+  color: var(--c-on-strong);
+  font-weight: 600;
+  animation: pillPop 0.24s ease-out;
+}
+
+.ui-pill__item--brand {
+  background: var(--c-brand);
+  border-color: var(--c-brand);
+  box-shadow: 0 4rpx 16rpx rgba(43, 90, 237, 0.2);
+}
+.ui-pill__item--forum {
+  background: var(--c-forum);
+  border-color: var(--c-forum);
+  box-shadow: 0 4rpx 16rpx rgba(115, 87, 255, 0.22);
+}
+.ui-pill__item--market {
+  background: var(--c-market);
+  border-color: var(--c-market);
+  box-shadow: 0 4rpx 16rpx rgba(245, 138, 50, 0.22);
+}
+.ui-pill__item--campus {
+  background: var(--c-campus);
+  border-color: var(--c-campus);
+  box-shadow: 0 4rpx 16rpx rgba(25, 166, 106, 0.22);
+}
+
+@keyframes pillPop {
+  0% { transform: scale(0.94); }
+  70% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}

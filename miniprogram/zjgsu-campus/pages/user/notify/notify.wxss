@@ -1,0 +1,104 @@
+/* pages/user/notify —— 消息通知。类名统一 nt-*，
+   .card / .card--flush / .container / .truncate / .clamp2 / .pressable 来自 app.wxss。 */
+
+.nt { padding-bottom: 60rpx; }
+
+.nt-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx;
+}
+.nt-bar__num { font-size: var(--fs-sub); color: var(--c-text); font-weight: 600; }
+.nt-bar__act { font-size: var(--fs-aux); color: var(--c-brand); }
+
+/* ---------- 读不到 / 降级 ---------- */
+.nt-warn {
+  padding: 28rpx;
+  background: var(--c-market-soft);
+}
+.nt-warn__title { font-size: var(--fs-body); font-weight: 600; color: var(--c-market-deep); }
+.nt-warn__sub {
+  margin-top: 12rpx;
+  font-size: var(--fs-aux);
+  line-height: 1.75;
+  color: #854f0b;
+}
+.nt-warn__btn { margin-top: 20rpx; }
+
+.nt-tip {
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-market-soft);
+  color: var(--c-market-deep);
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+}
+
+/* ---------- 列表 ---------- */
+.nt-list { margin-top: 4rpx; }
+.nt-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 28rpx 32rpx;
+  border-bottom: 2rpx solid var(--c-line);
+}
+.nt-item:last-child { border-bottom: none; }
+.nt-item__ico {
+  width: 64rpx;
+  height: 64rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 未读用底色区分：整块淡蓝比一个圆点更容易在一屏十几条里被扫到 */
+.nt-item__ico--unread { background: var(--c-brand-soft); }
+.nt-item__ico--read { background: var(--c-sunken); }
+.nt-item__img { width: 36rpx; height: 36rpx; }
+
+.nt-item__main { flex: 1; min-width: 0; }
+.nt-item__title { font-size: var(--fs-body); color: var(--c-text); }
+.nt-item__body {
+  margin-top: 8rpx;
+  font-size: var(--fs-aux);
+  line-height: 1.65;
+  color: var(--c-muted);
+}
+.nt-item__time { margin-top: 12rpx; font-size: var(--fs-tag); color: var(--c-faint); }
+
+.nt-dot {
+  width: 16rpx;
+  height: 16rpx;
+  flex-shrink: 0;
+  margin-top: 12rpx;
+  border-radius: 50%;
+  background: var(--c-danger);
+}
+
+/* ---------- 空 / 加载 ---------- */
+.nt-loading {
+  padding: 100rpx 0;
+  text-align: center;
+  font-size: var(--fs-sub);
+  color: var(--c-faint);
+}
+.nt-empty {
+  padding: 120rpx 60rpx;
+  text-align: center;
+}
+.nt-empty__img { width: 88rpx; height: 88rpx; opacity: 0.6; }
+.nt-empty__title {
+  margin-top: 24rpx;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.nt-empty__sub {
+  margin-top: 16rpx;
+  font-size: var(--fs-aux);
+  line-height: 1.8;
+  color: var(--c-faint);
+}

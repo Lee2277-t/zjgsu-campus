@@ -1,0 +1,347 @@
+/* pages/course/list —— 课程评价 / 老师评价 两个档位。
+   吸顶筛选放在 <sticky-filter> 里（组件自带 position:sticky + 降级毛玻璃），
+   页面主体仍然是普通文档流，靠 .container 的 24rpx 内边距留白。
+   类名一律 ls-*，避免和 app.wxss 里已有的语义类重名。 */
+
+/* ---------- 吸顶筛选区 ---------- */
+.ls-filter {
+  padding: 8rpx 24rpx 12rpx;
+}
+
+/* 搜索框：胶囊 + 白底 + 轻投影，和 .search-bar 同款但不重复定义它 */
+.ls-search {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  height: 88rpx;
+  padding: 0 28rpx;
+  margin-top: 12rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+  box-shadow: var(--sh-1);
+}
+.ls-search-icon {
+  width: 34rpx;
+  height: 34rpx;
+  flex-shrink: 0;
+}
+.ls-search-input {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  color: var(--c-text);
+}
+.ls-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48rpx;
+  height: 48rpx;
+  margin-right: -8rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-fill);
+  flex-shrink: 0;
+}
+.ls-clear-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+/* chip 行：横向滚动，热区 88rpx（app.wxss 的 .chip 已经给了） */
+.ls-scroll { margin-top: 12rpx; }
+.ls-dim { opacity: 0.45; }
+.ls-dim-hint {
+  margin: 2rpx 4rpx 0;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+.ls-chip-num {
+  margin-left: 8rpx;
+  font-size: var(--fs-micro);
+  color: var(--c-faint);
+}
+.chip-on .ls-chip-num { color: rgba(255, 255, 255, 0.8); }
+/* 某一类型一门都没有：.chip-empty（app.wxss）已经把整枚 chip 淡掉 */
+
+/* 条数 + 排序档位 */
+.ls-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 12rpx;
+  gap: 16rpx;
+}
+.ls-count {
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  flex-shrink: 0;
+  max-width: 340rpx;
+}
+.ls-fuzzy { color: var(--c-faint); }
+.ls-sorts { flex: 1; min-width: 0; }
+/* inline-flex 而非 flex：理由见 app.wxss 的 .chip-row 注释（iOS 横向滚动不换行） */
+.ls-sort-row { display: inline-flex; align-items: center; white-space: nowrap; }
+.ls-sort {
+  flex-shrink: 0;
+  padding: 0 20rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  border-radius: var(--r-pill);
+}
+.ls-sort-on {
+  color: var(--c-brand);
+  font-weight: 600;
+  background: var(--c-brand-soft);
+}
+/* 红框里的排序方向按钮：与排序档位分开，避免「切了档位就丢方向」 */
+.ls-reverse {
+  flex-shrink: 0;
+  min-width: 76rpx;
+  min-height: 72rpx;
+  padding: 0 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid var(--c-line);
+  border-radius: var(--r-pill);
+  color: var(--c-muted);
+  font-size: var(--fs-tag);
+  background: var(--c-card);
+}
+.ls-reverse-on { color: var(--c-brand); border-color: var(--c-brand-line); background: var(--c-brand-soft); }
+
+/* ---------- 老师档卡片 ---------- */
+.ls-tch {
+  display: flex;
+  align-items: center;
+}
+.ls-tch-left {
+  flex: 1;
+  min-width: 0;
+}
+.ls-tch-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ls-tch-meta {
+  margin-top: 8rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.ls-tch-pending { margin-right: 12rpx; color: var(--c-faint); }
+.ls-tch-sub {
+  margin-top: 4rpx;
+  font-size: var(--fs-tag);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* 320 宽度下左栏只剩 216rpx：右栏不设最小宽度，超限就让评分自己截断 */
+.ls-tch-right {
+  flex-shrink: 0;
+  max-width: 220rpx;
+  margin-left: 16rpx;
+  text-align: right;
+}
+.ls-stars {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 36rpx;
+}
+.ls-star-icon {
+  margin-left: 2rpx;
+}
+.ls-star-icon { width: 28rpx; height: 28rpx; }
+.ls-star-none {
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+.ls-tch-scores {
+  margin-top: 4rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8rpx;
+}
+.ls-tch-score {
+  font-size: var(--fs-sub);
+  color: var(--c-amber);
+}
+.ls-tch-score--muted { color: var(--c-muted); }
+.ls-tch-good {
+  margin-top: 4rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-campus-deep);
+}
+
+/* ---------- 空状态 / 分页提示 ---------- */
+.ls-empty {
+  padding: 48rpx 32rpx;
+  text-align: center;
+}
+/* .empty-title / .empty-desc 来自 app.wxss：30rpx 600 + 24rpx 次要色 */
+.ls-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  padding: 0 40rpx;
+  margin-top: 24rpx;
+  margin-right: 16rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-brand-soft);
+  color: var(--c-brand-deep);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+/* 次要动作：一排两个按钮时降级成描边款，主次才分得开 */
+.ls-btn--ghost {
+  background: var(--c-card);
+  border: 2rpx solid #dbe3f0;
+  color: var(--c-muted);
+}
+
+/* 「给老师单独写评价」入口卡 */
+.ls-tch-add {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  background: linear-gradient(135deg, #f2f6ff, #eaf1ff);
+  border: 2rpx solid #d9e4ff;
+}
+.ls-tch-add__main { flex: 1; min-width: 0; }
+.ls-tch-add__sub { margin-top: 8rpx; font-size: var(--fs-aux); }
+.ls-tch-add__btn {
+  flex-shrink: 0;
+  min-height: var(--hit-sm);
+  padding: 0 28rpx;
+  line-height: var(--hit-sm);
+  border-radius: var(--r-pill);
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+  font-size: var(--fs-sub);
+  font-weight: 600;
+}
+.ls-tail {
+  padding: 16rpx 0 32rpx;
+  text-align: center;
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+}
+
+/* ---------- 底部可信度提示卡 ---------- */
+.ls-trust {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  /* 虚线描边压住权重：它是说明，不是可点的操作 */
+  box-shadow: none;
+  border: 2rpx dashed #dce7ff;
+  background: #f7faff;
+}
+.ls-trust-icon {
+  width: 72rpx;
+  height: 72rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-l);
+  background: var(--c-brand-soft);
+}
+.ls-trust-icon image { width: 40rpx; height: 40rpx; }
+.ls-trust-main {
+  flex: 1;
+  min-width: 0;
+}
+.ls-trust-sub {
+  margin-top: 4rpx;
+  font-size: var(--fs-aux);
+  line-height: 1.6;
+}
+
+/* ---------- 右下角「＋」：新增一条评价 ---------- */
+/* 和论坛 / 闲置两个 tab 页同一个位置、同一种形态：fixed 右下、104rpx 圆、
+   品牌色、带方向感的投影。tabBar 是原生的，页面视口本来就不含它，
+   所以 bottom 只需要躲开安全区，不需要再加一条 tabBar 的高度 */
+.ls-fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: calc(32rpx + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: 104rpx;
+  height: 104rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--c-brand);
+  box-shadow: 0 12rpx 32rpx rgba(43, 90, 237, 0.32);
+}
+.ls-fab__icon { width: 48rpx; height: 48rpx; }
+
+/* ---------- 选课面板（半屏） ---------- */
+/* 搜索框本体走 app.wxss 的 .search-bar，里面三件套是页面级类，
+   全局没有 —— 和闲置列表页一样，各页各写一份尺寸 */
+.ls-pick { padding-top: 8rpx; }
+.ls-pick .search-bar__icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
+.ls-pick .search-bar__input { flex: 1; min-width: 0; font-size: var(--fs-body); }
+.ls-pick .search-bar__clear { padding: 0 12rpx; }
+.ls-pick .search-bar__clear-icon { width: 32rpx; height: 32rpx; }
+
+.ls-pick__hint {
+  margin: 20rpx 4rpx 8rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.ls-pick__list { max-height: 52vh; }
+.ls-pick__row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-height: 104rpx;
+  padding: 12rpx 4rpx;
+  border-bottom: 2rpx solid var(--c-line);
+}
+.ls-pick__main { flex: 1; min-width: 0; }
+.ls-pick__name { font-size: var(--fs-body); font-weight: 600; }
+.ls-pick__sub {
+  margin-top: 4rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.ls-pick__num { flex-shrink: 0; font-size: var(--fs-micro); color: var(--c-muted); }
+.ls-pick__chevron { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+.ls-pick__empty {
+  padding: 40rpx 8rpx;
+  text-align: center;
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+  color: var(--c-muted);
+}
+
+/* 面板里「课程库里没有 → 去添加」那一条：放在滚动区外面，永远看得见。
+   搜到一半发现没有时最需要它，把它埋在列表末尾等于没有 */
+.ls-pick__add {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-brand-soft);
+}
+.ls-pick__add-icon { width: 32rpx; height: 32rpx; flex-shrink: 0; }
+.ls-pick__add-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-brand-deep);
+}
+
+.ls-college-panel { padding-top: 8rpx; }

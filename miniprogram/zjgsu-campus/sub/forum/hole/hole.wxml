@@ -1,0 +1,132 @@
+<!-- sub/forum/hole/hole.wxml —— 匿名树洞（深底 + 6 种情绪） -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="匿名树洞" showBack dark bg="{{navBg}}" border="{{false}}" />
+
+<view class="hole-page hole-page--{{mood}}">
+  <!-- 氛围层：底色 / 光晕 / 柔光 / 星点，切情绪时 720ms 过渡 -->
+  <view class="hole-page__aura"></view>
+  <view class="hole-page__sec"></view>
+  <view class="hole-page__dots"></view>
+
+  <view class="hole-page__body">
+    <view class="mood-hero">
+      <view class="mood-hero__badge">
+        <image class="mood-hero__icon" src="/assets/icons/mood-{{mood}}--white.svg" mode="aspectFit" />
+      </view>
+      <view class="mood-hero__title">树洞会接住每一种情绪</view>
+      <view class="mood-hero__prompt">{{prompt}}</view>
+    </view>
+
+    <scroll-view class="mood-chips no-scrollbar" scroll-x="true" show-scrollbar="{{false}}">
+      <view class="mood-chips__row">
+        <view class="mood-chip {{mood === 'calm' ? 'on' : ''}} tap" data-m="calm" bindtap="onMood">
+          <image class="mood-chip__icon" src="/assets/icons/mood-calm--white.svg" mode="aspectFit" />
+          <text>平静</text>
+        </view>
+        <view class="mood-chip {{mood === 'happy' ? 'on' : ''}} tap" data-m="happy" bindtap="onMood">
+          <image class="mood-chip__icon" src="/assets/icons/mood-happy--white.svg" mode="aspectFit" />
+          <text>开心</text>
+        </view>
+        <view class="mood-chip {{mood === 'sad' ? 'on' : ''}} tap" data-m="sad" bindtap="onMood">
+          <image class="mood-chip__icon" src="/assets/icons/mood-sad--white.svg" mode="aspectFit" />
+          <text>Emo</text>
+        </view>
+        <view class="mood-chip {{mood === 'angry' ? 'on' : ''}} tap" data-m="angry" bindtap="onMood">
+          <image class="mood-chip__icon" src="/assets/icons/mood-angry--white.svg" mode="aspectFit" />
+          <text>愤怒</text>
+        </view>
+        <view class="mood-chip {{mood === 'awkward' ? 'on' : ''}} tap" data-m="awkward" bindtap="onMood">
+          <image class="mood-chip__icon" src="/assets/icons/mood-awkward--white.svg" mode="aspectFit" />
+          <text>尴尬</text>
+        </view>
+        <view class="mood-chip {{mood === 'tired' ? 'on' : ''}} tap" data-m="tired" bindtap="onMood">
+          <image class="mood-chip__icon" src="/assets/icons/mood-tired--white.svg" mode="aspectFit" />
+          <text>疲惫</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 快捷话题：点一下把 #标签 写进正文（handler 见 hole.js 的 onKeyword）。
+         这一排以前一行事件都没绑：看着是按钮，点了纹丝不动。 -->
+    <view class="mood-kws">
+      <view class="mood-kws__hint">说不出来就先挑一个话题</view>
+      <view class="mood-kws__row">
+        <view wx:for="{{tags}}" wx:key="*this"
+              class="mood-kw {{content.indexOf('#' + item) >= 0 ? 'mood-kw--on' : ''}} tap"
+              data-k="{{item}}" bindtap="onKeyword"># {{item}}</view>
+      </view>
+    </view>
+
+    <!-- 写一条：树洞只收文字，门槛压到最低 -->
+    <view class="glass-card composer">
+      <input class="composer__title" placeholder="给树洞起个标题（可不填）" value="{{title}}" bindinput="onTitle" maxlength="60" />
+      <textarea class="composer__content" placeholder="随便说，没人认识你" value="{{content}}" bindinput="onContent" maxlength="2000" auto-height="{{true}}" show-confirm-bar="{{false}}" confirm-type="send" bindconfirm="send" />
+      <view class="composer__foot">
+        <text class="composer__tip">整帖匿名（评论也是）· 违规照样会被删</text>
+        <!-- ⚠️ 置灰条件以前只看 content：只填了标题没写正文的同学，按钮是灰的，
+             看着像禁用（其实点得动），很多人到这儿就不敢点了。
+             树洞本来就允许「只写标题」，置灰条件必须和 send() 里的判断一致：标题或正文有一个就亮。
+             hover-class 是按下那一帧的反馈：view 的 :active 伪类在小程序里不可靠，
+             没有它，用户点下去连「按到了没」都不知道 -->
+        <view class="composer__send {{(title || content) ? '' : 'composer__send--off'}} tap" hover-class="composer__send--press" hover-start-time="0" bindtap="send" bindtouchstart="onSendTouchStart" bindtouchend="onSendTouchEnd">{{posting ? '投放中…' : '投进树洞'}}</view>
+      </view>
+    </view>
+
+    <view class="sort-seg">
+      <view class="segmented">
+        <view wx:for="{{sortOptions}}" wx:key="k"
+              class="segmented-item {{sort === item.k ? 'segmented-item-on' : ''}} tap"
+              data-s="{{item.k}}" bindtap="onSortPick">
+          <image class="sort-seg__icon" src="{{item.k === 'latest' ? '/assets/icons/clock--muted.svg' : (item.k === 'hot' ? '/assets/icons/flame--brand.svg' : (item.k === 'likes' ? '/assets/icons/thumbs-up--brand600.svg' : '/assets/icons/message-circle--muted.svg'))}}" mode="aspectFit" />
+          <text class="sort-seg__label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{posts.length === 0}}" class="hole-empty">
+      <image show-menu-by-longpress class="hole-empty__art" src="/assets/illustrations/treehole-night-light.svg" mode="aspectFit" />
+      <view class="hole-empty__title">树洞还是空的</view>
+      <view class="hole-empty__hint">前面第一条，可能被人记很久</view>
+    </view>
+
+    <view wx:for="{{posts}}" wx:key="id" wx:for-item="p" class="glass-card hole-card tap" data-id="{{p.id}}" bindtap="goDetail">
+      <view class="hole-card__head">
+        <text class="hole-card__who">{{p.showAuthor}}</text>
+        <text class="hole-card__time">{{p.time}}</text>
+        <view class="hole-card__replies">
+          <image class="hole-card__mini-icon" src="/assets/icons/message-circle--white.svg" mode="aspectFit" />
+          <text>{{p.commentCount}}</text>
+        </view>
+      </view>
+      <view wx:if="{{p.title}}" class="hole-card__title">{{p.title}}</view>
+      <view class="hole-card__content">{{p.content}}</view>
+
+      <!-- 情绪互动：抱抱 / 递茶 / 摸摸头，三个都能点，可以同时给。
+           catchtap 挡住卡片跳转，点回应不会误进详情页；
+           计数为 0 时只留文案不带数字，"抱抱 0" 读着像坏了 -->
+      <view class="hole-card__reactions">
+        <view class="reaction {{p.myReact.hug ? 'reaction--on' : ''}} tap"
+              data-id="{{p.id}}" data-k="hug" catchtap="onReact">💖 抱抱<text wx:if="{{p.react.hug > 0}}"> {{p.react.hug}}</text></view>
+        <view class="reaction {{p.myReact.tea ? 'reaction--on' : ''}} tap"
+              data-id="{{p.id}}" data-k="tea" catchtap="onReact">🍵 递茶<text wx:if="{{p.react.tea > 0}}"> {{p.react.tea}}</text></view>
+        <view class="reaction {{p.myReact.pat ? 'reaction--on' : ''}} tap"
+              data-id="{{p.id}}" data-k="pat" catchtap="onReact">🐾 摸摸头<text wx:if="{{p.react.pat > 0}}"> {{p.react.pat}}</text></view>
+      </view>
+
+      <view class="hole-card__foot">
+        <!-- 树洞的赞就叫「赞」：「抱抱」已经是上面三连里的一个动作，
+             两处都叫抱抱没人分得清哪个是哪个。catchtap 挡住卡片跳转 -->
+        <view class="hole-card__act {{p.liked ? 'hole-card__act--on' : ''}} tap" data-id="{{p.id}}" catchtap="onPostVote">赞 {{p.likes}}</view>
+        <view class="hole-card__act hole-card__act--right {{p.reported ? 'hole-card__act--done' : ''}}"
+              data-id="{{p.id}}" data-openid="{{p.authorOpenid}}" catchtap="onReport">{{p.reported ? '已举报' : '举报'}}</view>
+        <button class="hole-card__share" open-type="share">
+          <image class="hole-card__mini-icon" src="/assets/icons/share-2--white.svg" mode="aspectFit" />
+        </button>
+      </view>
+    </view>
+
+    <view wx:if="{{posts.length && sort === 'hot'}}" class="hole-tip">
+      热度 =（抱抱 + 评论×2）× 时间衰减，72 小时外的帖只剩两成，热榜天天有新东西。
+    </view>
+  </view>
+</view>

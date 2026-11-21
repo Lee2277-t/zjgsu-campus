@@ -1,0 +1,124 @@
+<!-- sub/course/teacher/teacher.wxml —— 某位老师的评价页。
+     一条评价里老师分 / 课程分是两档，分行排列，谁跟谁对不上就不会看错。
+     没有独立入口（tabBar 满了），从课程详情页的「老师评价」进来。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="{{navTitle}}" showBack />
+
+<view class="container tc-page" wx:if="{{name}}">
+  <view class="card tc-head">
+    <view class="title-lg">{{name}}</view>
+    <view wx:if="{{count || otherCount}}" class="tc-score">
+      <block wx:if="{{avg > 0}}">
+        <text class="tc-avg">{{avg}}</text>
+        <view class="tc-stars">
+          <image wx:for="{{[1,2,3,4,5]}}" wx:for-item="s" wx:key="*this" class="tc-star-icon" src="/assets/icons/star--{{s <= avgRound ? 'amber' : 'faint'}}.svg" mode="aspectFit" />
+        </view>
+        <text class="muted tc-scored">{{scoredCount}} 人给老师打分</text>
+      </block>
+      <block wx:else>
+        <text class="muted">还没有人单独给这位老师打分</text>
+      </block>
+      <!-- 课程分是另一档：说「提到这位老师的这些评价里，课本身怎么样」 -->
+      <view wx:if="{{courseAvg > 0}}" class="tc-course-line">这些评价里的课程分：{{courseAvg}}</view>
+    </view>
+  </view>
+
+  <!-- 审核员专用：老师本人投诉到邮箱、核实之后，把这位老师名下的评价一次性收下去。
+       放在评价列表正上方 —— 真要用的时候是带着投诉来的，一眼就该看见 -->
+  <view wx:if="{{isMod && count > 0}}" class="tc-mod">
+    <view class="tc-mod__text">审核员：这位老师本人投诉时，可将其名下全部评价下架。原文一律保留，可恢复。</view>
+    <view class="tc-mod__btn tap {{modBusy ? 'tc-mod__btn--off' : ''}}" bindtap="onHideAllReviews">
+      {{modBusy ? '正在下架…' : '全部下架（' + count + '）'}}
+    </view>
+  </view>
+
+  <view class="title-md tc-section">{{courseName || '这门课'}}的评价</view>
+
+  <view wx:if="{{count === 0}}" class="tc-empty">
+    <image class="tc-empty-icon" src="/assets/icons/notebook-pen--faint.svg" mode="aspectFit" />
+    <view class="empty-title">还没有针对 {{name}} 的评价</view>
+  </view>
+
+  <view wx:for="{{reviews}}" wx:key="id" wx:for-item="rv" class="card">
+    <view class="tc-review-head">
+      <text class="tc-review-name">{{rv.showName}}</text>
+      <view class="tc-review-op">
+        <text class="muted tc-review-time">{{rv.time}}</text>
+        <!-- 别人的评价给一个举报入口：老师本人看到被诽谤，是走邮箱投诉，
+             而同学看到别人骂老师 / 发广告，以前只能划走 -->
+        <text wx:if="{{!rv.isMine}}" class="tc-review-report tap" data-id="{{rv.id}}" catchtap="onReportReview">举报</text>
+      </view>
+    </view>
+    <view class="tc-scores">
+      <view wx:if="{{rv.hasTeacherScore}}" class="tc-score-row">
+        <text class="tc-score-label">老师</text>
+        <view class="tc-stars">
+          <image wx:for="{{[1,2,3,4,5]}}" wx:for-item="s" wx:key="*this" class="tc-star-icon" src="/assets/icons/star--{{s <= rv.teacherStarOn ? 'amber' : 'faint'}}.svg" mode="aspectFit" />
+        </view>
+        <text class="tc-score-text">{{rv.scoreText}}</text>
+      </view>
+      <view wx:if="{{rv.hasCourseScore}}" class="tc-score-row">
+        <text class="tc-score-label">课程</text>
+        <view class="tc-stars">
+          <image wx:for="{{[1,2,3,4,5]}}" wx:for-item="s" wx:key="*this" class="tc-star-icon" src="/assets/icons/star--{{s <= rv.starOn ? 'amber' : 'faint'}}.svg" mode="aspectFit" />
+        </view>
+        <text class="tc-score-text">{{rv.courseText}}</text>
+      </view>
+      <view wx:else class="tc-score-row">
+        <text class="tc-score-label">课程</text>
+        <text class="muted tc-score-text">未评分</text>
+      </view>
+    </view>
+    <view class="tc-review-content">{{rv.content}}</view>
+  </view>
+
+  <view wx:if="{{otherCount}}" class="title-md tc-section">其他课里的评价（{{otherCount}}）</view>
+  <view wx:for="{{otherReviews}}" wx:key="id" wx:for-item="rv" class="card pressable" data-id="{{rv.courseId}}" bindtap="goCourse">
+    <view class="tc-review-head">
+      <text class="tc-review-course">{{rv.courseName}}</text>
+      <view class="tc-review-op">
+        <text class="muted tc-review-time">{{rv.time}}</text>
+        <!-- catchtap：卡片本身是「点进去看那门课」，点举报不能顺带跳走 -->
+        <text wx:if="{{!rv.isMine}}" class="tc-review-report tap" data-id="{{rv.id}}" catchtap="onReportReview">举报</text>
+      </view>
+    </view>
+    <view class="tc-scores">
+      <view wx:if="{{rv.hasTeacherScore}}" class="tc-score-row">
+        <text class="tc-score-label">老师</text>
+        <view class="tc-stars">
+          <image wx:for="{{[1,2,3,4,5]}}" wx:for-item="s" wx:key="*this" class="tc-star-icon" src="/assets/icons/star--{{s <= rv.teacherStarOn ? 'amber' : 'faint'}}.svg" mode="aspectFit" />
+        </view>
+        <text class="tc-score-text">{{rv.scoreText}}</text>
+      </view>
+      <view wx:if="{{rv.hasCourseScore}}" class="tc-score-row">
+        <text class="tc-score-label">课程</text>
+        <view class="tc-stars">
+          <image wx:for="{{[1,2,3,4,5]}}" wx:for-item="s" wx:key="*this" class="tc-star-icon" src="/assets/icons/star--{{s <= rv.starOn ? 'amber' : 'faint'}}.svg" mode="aspectFit" />
+        </view>
+        <text class="tc-score-text">{{rv.courseText}}</text>
+      </view>
+      <view wx:else class="tc-score-row">
+        <text class="tc-score-label">课程</text>
+        <text class="muted tc-score-text">未评分</text>
+      </view>
+    </view>
+    <view class="tc-review-content">{{rv.content}}</view>
+  </view>
+
+  <view class="fixed-bar tc-bar">
+    <!-- 两条路：挂在某门课下写（会同时算进课程分），或不挂课只评人。
+         只想说「这位老师讲课怎么样」的同学不该被逼着先选一门课 -->
+    <base-button block bindtap="goReview">写对 {{name}} 的评价</base-button>
+    <view class="tc-bar__alt tap" bindtap="goReviewOnly">不挂课程，只评这位老师 ›</view>
+  </view>
+
+  <view class="refresh-fab tap" style="bottom: calc(240rpx + env(safe-area-inset-bottom));" bindtap="manualRefresh">
+    <image class="refresh-fab__icon" src="/assets/icons/refresh--faint.svg" mode="aspectFit" />
+    <text>刷新</text>
+  </view>
+
+  <view class="backtop-fab tap" style="bottom: calc(130rpx + env(safe-area-inset-bottom));" bindtap="backTop">
+    <image class="backtop-fab__icon" src="/assets/icons/arrow-up--faint.svg" mode="aspectFit" />
+    <text>顶部</text>
+  </view>
+</view>

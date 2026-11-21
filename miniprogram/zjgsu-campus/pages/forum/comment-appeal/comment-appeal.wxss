@@ -1,0 +1,141 @@
+/* pages/forum/comment-appeal —— 留言申诉 */
+
+.ap {
+  padding-top: var(--sp-5);
+}
+
+.ap-loading {
+  padding: var(--sp-10) 0;
+  text-align: center;
+  color: var(--c-muted);
+  font-size: var(--fs-sub);
+}
+
+/* ---- 打不开 ---- */
+.ap-warn__title {
+  font-size: var(--fs-h2);
+  color: var(--c-text);
+  font-weight: 600;
+}
+.ap-warn__sub {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+.ap-warn__btn {
+  margin-top: var(--sp-6);
+}
+
+/* ---- 头部：结论一句话 ---- */
+.ap-head__title {
+  font-size: var(--fs-h2);
+  color: var(--c-text);
+  font-weight: 600;
+}
+.ap-head__sub {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.6;
+}
+
+/* ---- 原文引用：左边一根竖线，和普通正文区分开 ---- */
+.ap-quote__label {
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  margin-bottom: var(--sp-3);
+}
+.ap-quote__text {
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  line-height: 1.75;
+  padding-left: var(--sp-4);
+  border-left: 4rpx solid var(--c-line);
+  word-break: break-word;
+}
+.ap-quote__imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+.ap-quote__img {
+  width: 176rpx;
+  height: 176rpx;
+  border-radius: var(--r-m);
+  background: var(--c-fill);
+}
+
+/* ---- 已申诉 ---- */
+.ap-done__title {
+  font-size: var(--fs-h2);
+  color: var(--c-text);
+  font-weight: 600;
+}
+.ap-done__sub {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-sub);
+  color: var(--c-text);
+  line-height: 1.7;
+  word-break: break-word;
+}
+.ap-done__time {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+
+/* ---- 表单 ---- */
+.ap-form__label {
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  margin-bottom: var(--sp-3);
+}
+.ap-form__input {
+  width: 100%;
+  min-height: 200rpx;
+  box-sizing: border-box;
+  padding: var(--sp-4);
+  border-radius: var(--r-m);
+  background: var(--c-fill);
+  color: var(--c-text);
+  font-size: var(--fs-body);
+  line-height: 1.7;
+}
+.ap-form__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin: var(--sp-2) 0 var(--sp-5);
+}
+.ap-form__hint {
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+
+.ap-note {
+  padding: 0 var(--sp-2) var(--sp-6);
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+
+/* ---- 不支持申诉 ---- */
+.ap-closed__title {
+  font-size: var(--fs-h2);
+  color: var(--c-text);
+  font-weight: 600;
+}
+.ap-closed__sub {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+
+.ap-back {
+  padding: var(--sp-4) 0 var(--sp-8);
+  text-align: center;
+  font-size: var(--fs-sub);
+  color: var(--c-brand);
+}

@@ -1,0 +1,28 @@
+<!-- components/ui/privacy-modal/index.wxml
+     《用户隐私保护指引》授权弹窗。
+     同意按钮用微信官方的 open-type="agreePrivacyAuthorization"：
+     点一下由微信完成授权，比我们手动 resolve 可靠得多。 -->
+<view wx:if="{{show}}" class="pm-mask" bindtap="noop" catchtouchmove="noop">
+  <view class="pm-card" catchtap="noop">
+    <view class="pm-title">用户隐私保护提示</view>
+
+    <view class="pm-body">
+      感谢你使用「商砖小站」。在开始使用前，请你阅读并同意
+      <text class="pm-link" bindtap="openContract">《{{name}}》</text>。
+    </view>
+
+    <view class="pm-note">
+      我们只会在你主动使用选图、上传学习资料、填写同学名片等功能时，
+      按协议约定收集必要的信息，不会向任何第三方提供。
+    </view>
+
+    <button
+      class="pm-btn pm-btn--agree"
+      open-type="agreePrivacyAuthorization"
+      bindagreeprivacyauthorization="onAgree"
+      bindtap="onAgreeTap"
+    >同意并继续</button>
+
+    <view class="pm-deny" bindtap="onDeny">暂不同意</view>
+  </view>
+</view>

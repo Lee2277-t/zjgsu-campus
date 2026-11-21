@@ -1,0 +1,196 @@
+/* pages/user/profile —— 我的资料。类名统一 pf-*，
+   .card / .title-sm / .muted / .tap 这些语义类来自 app.wxss，这里不重复定义。 */
+
+/* ---------- 顶部渐变：个人资料青蓝 #2F9FD6 → 主色 #2B5AED ---------- */
+.pf-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 32rpx 44rpx;
+  margin-bottom: 24rpx;
+  border-radius: var(--r-xl);
+  background: linear-gradient(160deg, var(--c-profile) 0%, var(--c-brand) 100%);
+  box-shadow: 0 12rpx 32rpx rgba(47, 159, 214, 0.24);
+}
+
+.pf-avatar {
+  margin-bottom: 24rpx;
+}
+
+.pf-nick {
+  width: 100%;
+  max-width: 480rpx;
+  height: 88rpx;
+  padding: 0 32rpx;
+  border-radius: var(--r-pill);
+  border: 2rpx solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--c-on-strong);
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  text-align: center;
+}
+/* placeholder 伪类在 input 上要单独给，沿用上一版的白色半透明 */
+.pf-nick-ph { color: rgba(255, 255, 255, 0.7); }
+
+.pf-hero-tip {
+  margin-top: 16rpx;
+  font-size: var(--fs-tag);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ---------- 分区标题 ---------- */
+.pf-sec {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  margin-bottom: 8rpx;
+}
+
+.pf-row {
+  display: flex;
+  align-items: center;
+  min-height: 112rpx;
+  padding: 0 4rpx;
+}
+.pf-row + .pf-field { margin-top: 8rpx; }
+
+.pf-row-label {
+  font-size: var(--fs-body);
+  color: var(--c-muted);
+  width: 180rpx;
+  flex-shrink: 0;
+}
+.pf-row-value {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-brand-deep);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pf-arrow {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+
+/* ---------- 输入块 / 圆角输入 ---------- */
+.pf-field { margin-top: 8rpx; }
+.pf-field-label {
+  display: block;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  margin-bottom: 8rpx;
+}
+
+.pf-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: var(--fs-body);
+  /* input 不给固定高度会被默认行高拦腰截字，必须定高 + 只留水平内边距 */
+  height: 88rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+  color: var(--c-text);
+}
+.pf-input--mt { margin-top: 24rpx; }
+
+/* ---------- 身份 ID ---------- */
+.pf-id {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-brand-soft);
+}
+.pf-id-icon {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+}
+.pf-id-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-aux);
+  color: var(--c-brand-deep);
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+/* ---------- 隐私档位 ---------- */
+.pf-current {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  border-radius: var(--r-l);
+}
+.pf-current-icon {
+  width: 48rpx;
+  height: 48rpx;
+  flex-shrink: 0;
+}
+.pf-current-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pf-current-text .muted { margin-top: 4rpx; }
+
+.pf-privacy { margin-top: 20rpx; }
+
+.pf-none { margin-top: 20rpx; }
+
+.pf-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+.pf-tip-icon {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+  margin-top: 8rpx;
+}
+
+/* ---------- 底部操作 ---------- */
+.pf-actions {
+  margin-top: 8rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pf-cancel {
+  width: 100%;
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12rpx;
+  font-size: var(--fs-body);
+  color: var(--c-muted);
+}
+.pf-cancel--hover { opacity: 0.72; }
+.pf-reset {
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-sub);
+  color: var(--c-faint);
+}

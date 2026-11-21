@@ -1,0 +1,96 @@
+<!-- sub/market/mine/mine.wxml —— 我发布的信息（入口在列表页「我发布的」） -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="我发布的" showBack />
+
+<view class="container w-page">
+  <view wx:if="{{loading}}" class="sk-wrap">
+    <view class="sk-card">
+      <view class="skeleton sk-line sk-title"></view>
+      <view class="skeleton sk-line sk-mid"></view>
+    </view>
+    <view class="sk-card">
+      <view class="skeleton sk-line sk-title"></view>
+      <view class="skeleton sk-line sk-mid"></view>
+    </view>
+  </view>
+
+  <view wx:elif="{{items.length === 0}}" class="empty-bag">
+    <view class="empty-bag__card">
+      <image show-menu-by-longpress
+        class="empty-bag__img"
+        src="/assets/illustrations/empty-market-bag.svg"
+        mode="aspectFit"
+      />
+      <view class="empty-bag__title">这里空空如也</view>
+      <view class="empty-bag__desc">快去发布你的第一件闲置吧，让好物在校园里继续流转。</view>
+      <view
+        class="empty-bag__cta pressable"
+        hover-class="empty-bag__cta--hover"
+        hover-stay-time="80"
+        bindtap="goEdit"
+      >
+        <image class="empty-bag__cta-icon" src="/assets/icons/plus--white.svg" mode="aspectFit" />
+        <text>发布第一件闲置</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:else>
+    <view
+      wx:for="{{items}}"
+      wx:key="id"
+      class="card w-item pressable"
+      data-id="{{item.id}}"
+      hover-class="w-item--hover"
+      hover-stay-time="80"
+      bindtap="goDetail"
+    >
+      <view class="w-item__top">
+        <view class="tag {{item.type === 'sell' ? 'tag--market' : 'tag--brand'}}">
+          <image
+            class="w-item__kind-icon"
+            src="{{item.type === 'sell' ? '/assets/icons/shopping-bag--market.svg' : '/assets/icons/tag--brand.svg'}}"
+            mode="aspectFit"
+          />
+          <text>{{item.type === 'sell' ? '闲置' : (item.type === 'found' ? '招领' : '寻物')}}</text>
+        </view>
+        <!-- 被举报暂停展示的排在最前面说清楚：否则作者只会看到一条
+             点进去说「不见了」的条目，还以为是系统把它弄丢了 -->
+        <view wx:if="{{item.paused}}" class="w-item__state w-item__state--warn">已暂停展示</view>
+        <view wx:elif="{{item.done}}" class="w-item__state">已解决</view>
+      </view>
+
+      <view class="w-item__title">{{item.title}}</view>
+      <view wx:if="{{item.desc}}" class="w-item__desc clamp2">{{item.desc}}</view>
+
+      <view wx:if="{{item.images && item.images.length}}" class="w-item__imgs">
+        <image show-menu-by-longpress
+          wx:for="{{item.images}}"
+          wx:for-item="src"
+          wx:key="*this"
+          class="w-item__img img-fb"
+          src="{{src}}"
+          mode="aspectFill"
+          lazy-load
+        ></image>
+      </view>
+
+      <view class="w-item__foot">
+        <text wx:if="{{item.price}}" class="w-item__price">¥{{item.price}}</text>
+        <text class="faint w-item__time">{{item.time}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="w-gap"></view>
+
+  <view
+    class="w-publish pressable"
+    hover-class="w-publish--hover"
+    hover-stay-time="80"
+    bindtap="goEdit"
+  >
+    <image class="w-publish__icon" src="/assets/icons/plus--market.svg" mode="aspectFit" />
+    <text>再发一条</text>
+  </view>
+</view>

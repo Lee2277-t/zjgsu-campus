@@ -1,0 +1,189 @@
+<!-- pages/user/chat —— 和一位同学的私聊。
+     底部输入区是 position: fixed（.fixed-bar），所以整页容器绝不能出现 transform：
+     一旦祖先元素有 transform，fixed 会退化成相对定位，输入栏就沉不到屏幕底部。
+     云函数参数、历史分页、scrollTo 逻辑原样保留。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="{{peerName || '私信'}}" showBack />
+
+<!-- 陌生人先开口的会话：就地给出「接受 / 忽略」。
+     放最上面是因为这是此刻唯一需要用户做的决定 —— 要么把它收进会话列表，
+     要么让它继续待在请求箱里。忽略不等于拉黑，对方再发一条还会回来 -->
+<view wx:if="{{isPendingReq}}" class="ct-req">
+  <view class="ct-req__text">
+    <text class="ct-req__title">对方还不是你的同学</text>
+    <text class="ct-req__sub">这条消息在「消息请求」里。接受后他会出现在你的私信列表里。</text>
+  </view>
+  <view class="ct-req__acts">
+    <view class="ct-req__btn ct-req__btn--ghost tap" bindtap="onDismissReq">忽略</view>
+    <view class="ct-req__btn tap" bindtap="onAcceptReq">接受</view>
+  </view>
+</view>
+
+<view wx:if="{{peer}}" class="ct-card tap" bindtap="goCard">
+  <image class="ct-card-icon" src="/assets/icons/user-round--profile.svg" mode="aspectFit" />
+  <text class="ct-card-title truncate">查看 {{peerName || '对方'}} 的名片</text>
+  <image class="ct-card-arrow" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+</view>
+
+<view wx:if="{{peer}}" class="ct-card tap" bindtap="onToggleBlock">
+  <image class="ct-card-icon" src="{{blockedByMe ? '/assets/icons/check--campus.svg' : '/assets/icons/shield--danger.svg'}}" mode="aspectFit" />
+  <text class="ct-card-title truncate">{{blockedByMe ? '已拉黑 · 点击解除' : '拉黑对方'}}</text>
+  <image class="ct-card-arrow" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+</view>
+
+<view class="ct">
+  <!-- 关系状态条：还不是好友就提前把「还剩几条」说清楚。
+       只在还能发的时候挂这条 —— 发满之后输入区会整块换成锁块并说明原因，
+       两处都在讲同一件事只会显得啰嗦。
+       解除好友之后也会走到这里（双方回到非好友状态），
+       配合会话里那条系统消息，用户才知道「关系变了」而不是「私信坏了」。
+       ⚠️ 这条注释刻意放在整个 wx:if/wx:elif 链**之前**：
+       注释夹在 wx:if 与 wx:else 中间会不会被当成兄弟节点，各端编译器行为不一致，
+       不给自己留这种「本地好好的、真机裂开」的口子 -->
+  <view wx:if="{{blockedByMe}}" class="ct-blocked-tip">
+    <image class="ct-blocked-tip__icon" src="/assets/icons/shield--danger.svg" mode="aspectFit" />
+    <text>你已拉黑对方，双方都不能继续发送新消息</text>
+  </view>
+  <view wx:elif="{{blockedByThem}}" class="ct-blocked-tip">
+    <image class="ct-blocked-tip__icon" src="/assets/icons/shield--danger.svg" mode="aspectFit" />
+    <text>对方设置了消息限制，你暂时发不出消息</text>
+  </view>
+  <view wx:elif="{{!isFriend && canSend && quotaText}}" class="ct-quota-tip">
+    <image class="ct-quota-tip__icon" src="/assets/icons/users-round--profile.svg" mode="aspectFit" />
+    <text>{{quotaText}}</text>
+  </view>
+  <scroll-view
+    class="ct-body"
+    scroll-y="true"
+    scroll-into-view="{{scrollTo}}"
+    scroll-with-animation="{{scrollAnim}}"
+    bindscroll="onScroll"
+    bindscrolltolower="onScrollToLower"
+  >
+    <view wx:if="{{loading}}" class="ct-tip">
+      <image class="ct-tip-icon" src="/assets/icons/loader--faint.svg" mode="aspectFit" />加载中…
+    </view>
+
+    <view wx:elif="{{messages.length === 0}}" class="ct-notice">
+      <image class="ct-notice-icon" src="/assets/icons/message-circle--faint.svg" mode="aspectFit" />
+      还没有对话，发第一句话认识一下吧
+    </view>
+
+    <block wx:for="{{messages}}" wx:key="id" wx:for-index="mi">
+      <!-- 长按一条消息出菜单：复制 / 撤回（2 分钟内）/ 重发（未送达）/ 举报。
+           菜单项由 JS 按这条消息此刻能做什么现算。
+           也刻意把注释放在 wx:if / wx:else 之前，别夹在两者中间 -->
+      <!-- 系统消息（「你们已解除同学关系…」）：居中的小字说明，不是气泡。
+           做成气泡的话会被误读成对方说的一句话，而且它不吃额度、不属于任何一方 -->
+      <view wx:if="{{item.sys}}" class="ct-sys">
+        <text class="ct-sys__text">{{item.text}}</text>
+      </view>
+
+      <view wx:else class="ct-row {{item.mine ? 'ct-row--mine' : ''}}" data-idx="{{mi}}" bindlongpress="msgMenu">
+        <view id="msg-{{item.id}}" class="ct-msg" data-idx="{{mi}}" catchlongpress="msgMenu">
+          <!-- 已撤回：只留一行灰色说明，图片和文字都不再渲染。
+               撤回后云端把 text 清空、images 清空，这里再挡一道，
+               免得旧数据（撤回字段加上之前就存在的记录）漏出内容 -->
+          <view wx:if="{{item.recalled}}" class="ct-recalled">消息已撤回</view>
+          <block wx:else>
+            <!-- 配图：1 张走大图，2–3 张并排，4 张以上三列网格。
+                 预览靠下标回查 this.data.messages（data-* 里塞数组会被拼成逗号串） -->
+            <view wx:if="{{item.images.length}}" class="ct-imgs imgs-{{item.images.length > 3 ? 'many' : item.images.length}}">
+              <image
+                wx:for="{{item.images}}"
+                wx:for-item="img"
+                wx:for-index="ii"
+                wx:key="*this"
+                class="ct-img img-fb"
+                src="{{img}}"
+                mode="aspectFill"
+                lazy-load
+                data-idx="{{mi}}"
+                data-i="{{ii}}"
+                bindtap="previewMsg"
+              />
+            </view>
+            <view wx:if="{{item.text}}" class="ct-bubble {{item.mine ? 'ct-bubble--mine' : ''}} {{item.failed ? 'ct-bubble--failed' : ''}}">
+              <!-- user-select 让长按文字直接出现系统复制菜单；父级的 msgMenu
+                   仍负责撤回 / 重发 / 举报，复制不再只藏在二级菜单里。 -->
+              <text class="ct-bubble__text" user-select="{{true}}">{{item.text}}</text>
+            </view>
+          </block>
+          <view class="ct-clock">
+            {{item.clock}}<text wx:if="{{item.pending && !item.failed}}"> · 发送中</text><text wx:elif="{{item.failed}}"> · 未送达</text><text wx:elif="{{item.showRead}}"> · {{item.read ? '已读' : '未读'}}</text>
+          </view>
+          <!-- 配图消息没有气泡，重发按钮得有地方挂，所以贴着时间那行给一个 -->
+          <view wx:if="{{item.failed}}" class="ct-retry tap" data-idx="{{mi}}" bindtap="retryMsg">重发</view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 固定输入栏会压住内容，底部留出等高的空白，最后一句话才不会被盖住。
+         待发缩略图条展开时输入区更高，这里同步加高，不然最后一条会被盖住 -->
+    <view class="ct-bottom-space {{!canSend ? 'ct-bottom-space--lock' : ((pending.length || uploading) ? 'ct-bottom-space--tall' : '')}}" />
+  </scroll-view>
+
+  <!-- 轮询时对方发了新消息、而用户正在往上翻记录：不把他一把拽到底，
+       只在底部浮一枚角标。点它才滚过去。
+       角标高度要跟着输入区走 —— 锁块比输入行高，用同一个 offset 会压在锁块上 -->
+  <view
+    wx:if="{{newHint}}"
+    class="ct-newhint tap {{!canSend ? 'ct-newhint--lock' : ''}}"
+    bindtap="onJumpNew"
+  >
+    <text>{{newHint}} 条新消息</text>
+    <text class="ct-newhint__arrow">↓</text>
+  </view>
+
+  <view wx:if="{{contact}}" class="ct-contact tap" bindtap="copyContact">
+    <image class="ct-contact-icon" src="/assets/icons/message-square--profile.svg" mode="aspectFit" />
+    <text class="truncate">{{contactLabel}}：{{contact}}</text>
+    <text class="ct-contact-copy">点击复制</text>
+  </view>
+
+  <view class="ct-bar fixed-bar">
+    <!-- 待发送的图片：点图看大图，点右上角 × 撤掉。上传中就在这里显示进度，
+         不弹蒙层挡输入框 -->
+    <view wx:if="{{(pending.length || uploading) && canSend}}" class="ct-pending">
+      <view class="ct-pending__item" wx:for="{{pending}}" wx:key="*this" wx:for-index="pi">
+        <image class="ct-pending__img img-fb" src="{{item}}" mode="aspectFill" data-idx="{{pi}}" bindtap="previewPending" />
+        <view class="ct-pending__x" data-idx="{{pi}}" catchtap="onRemovePending">
+          <image class="ct-pending__x-icon" src="/assets/icons/x--ink.svg" mode="aspectFit" />
+        </view>
+      </view>
+      <view wx:if="{{uploading}}" class="ct-pending__loading">上传中 {{uploadPercent}}%</view>
+    </view>
+
+    <!-- 发不出去的时候（额度用尽 / 任一方向拉黑）把整行输入区换成一块引导：
+         输入框留着也没用 —— 打满字点发送只会被拒，不如直接给出此刻唯一能做的事。
+         按钮按关系分三种：对方已申请我 → 同意；我申请过 → 等回应；都没有 → 申请 -->
+    <view wx:if="{{!canSend}}" class="ct-lock">
+      <view class="ct-lock__text">{{lockText}}</view>
+      <block wx:if="{{!blockedByMe && !blockedByThem}}">
+        <view wx:if="{{incomingRequest}}" class="ct-lock__btn tap" bindtap="onAcceptFriend">同意加好友</view>
+        <view wx:elif="{{requested}}" class="ct-lock__wait">已申请，等对方回应</view>
+        <view wx:else class="ct-lock__btn tap" bindtap="onAddFriend">申请加好友</view>
+      </block>
+    </view>
+
+    <view wx:else class="ct-bar__row">
+      <view class="ct-pick tap" bindtap="chooseImages">
+        <image class="ct-pick-icon" src="/assets/icons/image--brand.svg" mode="aspectFit" />
+      </view>
+      <view class="ct-gif tap" bindtap="chooseGif">GIF</view>
+      <input
+        class="ct-input"
+        placeholder="说点什么…"
+        value="{{input}}"
+        maxlength="300"
+        confirm-type="send"
+        bindinput="onInput"
+        bindconfirm="onConfirm"
+        adjust-position="true"
+      />
+      <view class="ct-send tap" bindtap="onSendTap">
+        <image class="ct-send-icon" src="/assets/icons/send--white.svg" mode="aspectFit" />发送
+      </view>
+    </view>
+  </view>
+</view>

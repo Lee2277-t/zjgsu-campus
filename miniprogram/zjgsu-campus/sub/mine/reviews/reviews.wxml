@@ -1,0 +1,61 @@
+<!-- sub/mine/reviews/reviews.wxml —— 我的课程评价
+     从「我的」页搬过来的独立列表页（数字卡「课程评价」点进来）。
+     数据字段沿用 reviews.js：reviews（含 courseName / starOn / canDelete）。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="我的课程评价" showBack />
+
+<view class="container mr-page">
+  <block wx:if="{{reviews.length}}">
+    <view class="mr-bar">共 {{reviews.length}} 条 · 点进去看课程详情</view>
+
+    <view
+      wx:for="{{reviews}}"
+      wx:key="id"
+      wx:for-item="r"
+      class="card mr-item pressable"
+      hover-class="mr-item--hover"
+      hover-stay-time="80"
+      data-id="{{r.courseId}}"
+      bindtap="goCourse"
+    >
+      <view class="mr-item__top">
+        <text class="mr-item__course truncate">{{r.courseName}}</text>
+        <view
+          wx:if="{{r.canDelete}}"
+          class="mr-del pressable"
+          data-id="{{r.id}}"
+          catchtap="onDelete"
+        >删除</view>
+      </view>
+
+      <view class="mr-item__meta">
+        <view class="mr-stars">
+          <image
+            wx:for="{{[1,2,3,4,5]}}"
+            wx:for-item="s"
+            wx:key="*this"
+            class="mr-star"
+            src="{{s <= r.starOn ? '/assets/icons/star--amber.svg' : '/assets/icons/star--faint.svg'}}"
+            mode="aspectFit"
+          ></image>
+        </view>
+        <text class="mr-time">{{r.time}}</text>
+      </view>
+
+      <view class="mr-item__content clamp2">{{r.content}}</view>
+
+      <!-- 只评老师的那条没有课程可点，说清楚，别让人以为是加载失败 -->
+      <view wx:if="{{!r.courseId}}" class="mr-note">这条评价挂在老师名下，没有对应课程</view>
+    </view>
+  </block>
+
+  <empty-state
+    wx:else
+    icon="star"
+    iconColor="faint"
+    title="还没有写过课程评价"
+    description="上过的课、带过的老师，写一句给后面的同学"
+    actionLabel="去课程列表"
+    bind:action="goWrite"
+  />
+</view>

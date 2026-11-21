@@ -1,0 +1,134 @@
+<!-- sub/market/detail/detail.wxml —— 闲置 / 失物招领 详情 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="信息详情" showBack />
+
+<view class="container d-page">
+  <view wx:if="{{loading}}" class="d-loading">
+    <image class="d-loading__icon" src="/assets/icons/loader--muted.svg" mode="aspectFit" />
+    <text class="muted">{{loadingText}}</text>
+  </view>
+
+  <block wx:else>
+    <view wx:if="{{!item}}" class="d-missing">
+      <image class="d-missing__icon" src="/assets/icons/inbox--faint.svg" mode="aspectFit" />
+      <view class="d-missing__title">这条记录不见了</view>
+      <view class="d-missing__desc">可能已经被发布者删除，或者还没同步到你的设备上。</view>
+    </view>
+
+    <block wx:else>
+      <!-- 被举报自动下架：这一屏只有作者自己看得到（别人打开是「这条记录不见了」）。
+           没有这块的话，被误伤的同学只能看着内容凭空消失，连问都不知道问谁 -->
+      <view wx:if="{{paused}}" class="d-paused">
+        <view class="d-paused__title">这条因举报暂停展示</view>
+        <view class="d-paused__desc">现在只有你能看到。确认没有违规的话，恢复后其他同学就能重新看到。</view>
+        <view class="d-paused__btn tap pressable" hover-class="d-paused__btn--hover" hover-stay-time="80" bindtap="onRestore">
+          恢复展示
+        </view>
+      </view>
+
+      <!-- 图片：卡片铺满，点开是大图预览 -->
+      <view wx:if="{{item.images && item.images.length}}" class="d-imgs">
+        <image show-menu-by-longpress
+          wx:for="{{item.images}}"
+          wx:for-item="src"
+          wx:key="*this"
+          class="d-img pressable img-fb"
+          src="{{src}}"
+          mode="aspectFill"
+          lazy-load
+          data-imgs="{{item.images}}"
+          bindtap="previewImages"
+        ></image>
+      </view>
+
+      <base-card padded>
+        <!-- 和列表页同一个口径：分类优先。课程互助的 type 也是 sell，
+             只按 type 判会显示成「闲置」 -->
+        <view class="tag {{item.type === 'sell' ? 'tag--market' : 'tag--brand'}}">
+          <image
+            class="d-kind__icon"
+            src="{{item.category === 'substitute' ? '/assets/icons/users-round--market.svg' : (item.type === 'sell' ? '/assets/icons/shopping-bag--market.svg' : '/assets/icons/tag--brand.svg')}}"
+            mode="aspectFit"
+          />
+          <text>{{item.category === 'substitute' ? '课程互助' : (item.type === 'sell' ? '闲置' : (item.type === 'found' ? '招领' : '寻物'))}}</text>
+        </view>
+
+        <view class="d-title">{{item.title}}</view>
+        <view wx:if="{{item.desc}}" class="d-desc">{{item.desc}}</view>
+        <!-- 浏览人数：让「这条热不热」有个可见的凭据。低于门槛整行不出现 ——
+             刚发出来的记录写「0 人看过」「1 人看过」只会劝退第一个点进来的人 -->
+        <view wx:if="{{viewsText}}" class="d-views">{{viewsText}}</view>
+      </base-card>
+
+      <base-card padded>
+        <view wx:if="{{item.courseName}}" class="d-row">
+          <image class="d-row__icon" src="/assets/icons/book-open--muted.svg" mode="aspectFit" />
+          <text class="d-row__k">教材</text>
+          <text class="d-row__v">{{item.courseName}}</text>
+        </view>
+        <view class="d-row">
+          <image class="d-row__icon" src="/assets/icons/map-pin--muted.svg" mode="aspectFit" />
+          <text class="d-row__k">地点</text>
+          <text class="d-row__v">{{item.location || '未填写'}}</text>
+        </view>
+        <view wx:if="{{item.price}}" class="d-row">
+          <image class="d-row__icon" src="/assets/icons/tag--muted.svg" mode="aspectFit" />
+          <text class="d-row__k">参考价</text>
+          <text class="d-price">¥{{item.price}}</text>
+        </view>
+        <view class="d-row">
+          <image class="d-row__icon" src="/assets/icons/clock--muted.svg" mode="aspectFit" />
+          <text class="d-row__k">时间</text>
+          <text class="d-row__v">{{item.time}}</text>
+        </view>
+        <view class="d-row">
+          <image class="d-row__icon" src="/assets/icons/user-round--muted.svg" mode="aspectFit" />
+          <text class="d-row__k">发布者</text>
+          <text class="d-row__v">{{item.author || '某个同学'}}</text>
+        </view>
+      </base-card>
+
+      <!-- 联系方式是这页的主角：整块用闲置橙浅底，比对齐的表格更容易被看见 -->
+      <view class="d-contact">
+        <image class="d-contact__icon" src="/assets/icons/message-circle--market.svg" mode="aspectFit" />
+        <view class="d-contact__body">
+          <view class="d-contact__label">联系方式</view>
+          <view class="d-contact__value">{{item.contact || '发布者没留'}}</view>
+        </view>
+        <view class="d-copy pressable" hover-class="d-copy--hover" hover-stay-time="80" bindtap="copyContact">
+          <text>复制</text>
+        </view>
+      </view>
+
+      <base-card padded>
+        <button class="d-share" open-type="share">
+          <image src="/assets/icons/share-2--brand.svg" mode="aspectFit" />
+          <text>转发给同学</text>
+        </button>
+
+        <view wx:if="{{item.isMine && !paused}}" class="d-mine">
+          <view class="d-op pressable" hover-class="d-op--hover" hover-stay-time="80" bindtap="onDone">
+            <image src="/assets/icons/check--campus.svg" mode="aspectFit" />
+            <text>{{item.done ? '重新开放' : '标记为已解决'}}</text>
+          </view>
+          <view class="d-op d-op--danger pressable" hover-class="d-op--hover" hover-stay-time="80" bindtap="onDelete">
+            <image src="/assets/icons/trash-2--danger.svg" mode="aspectFit" />
+            <text>删除</text>
+          </view>
+        </view>
+
+        <!-- 暂停展示时这一块整个不出现：那是我自己的内容，
+             既不该出现「打个招呼」，也不该出现「举报这条内容」 -->
+        <view wx:elif="{{!item.isMine}}" class="d-else">
+          <view class="d-else__tip">联系不上就打个招呼，对方上线后能看到你的消息</view>
+          <button class="d-chat pressable" hover-class="d-chat--hover" hover-stay-time="80" bindtap="goChat">
+            <image src="/assets/icons/message-circle--white.svg" mode="aspectFit" />
+            <text>打个招呼</text>
+          </button>
+          <!-- 举报入口只在别人的条目上出现：自己的东西有问题，删掉即可 -->
+          <view class="d-report tap" bindtap="onReport">举报这条内容</view>
+        </view>
+      </base-card>
+    </block>
+  </block>
+</view>

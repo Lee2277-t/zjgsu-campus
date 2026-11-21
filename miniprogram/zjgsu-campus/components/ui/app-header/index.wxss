@@ -1,0 +1,89 @@
+/* components/ui/app-header/index.wxss
+   浅色自定义导航（Web 版 AppHeader.vue 的原生版）。
+   高度全部由 JS 注入的 nav.* 驱动，不用 clamp / vh 之类的浏览器特性。 */
+
+.app-header {
+  position: relative;
+  z-index: 50;
+  /* 默认透出页面底色（app.wxss 的 page 是 #f5f7fa）：
+     以前写死 #ffffff，和页面底色差一档，顶部就多出一条白块 —— 视觉断层就是这么来的。
+     需要实色底的页面用 bg 属性传进来（树洞 / 盲盒这类深底页）。 */
+  background: transparent;
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+.app-header--dark {
+  background: #11142e;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 深底页 / 有底纹的页不要这条分割线：白线一压，割裂感立刻回来 */
+.app-header--noborder { border-bottom: none; }
+
+/* ---------- 状态栏 ----------
+   注意：这里**不画**时间 / 信号 / 电量 —— 那些是系统状态栏的活，
+   自定义导航模式下系统照样把它们画在页面最上层。
+   组件只通过 padding-top = statusBarHeight 把这块高度让出来，
+   画一遍就是「顶部突兀多出一行、跟背景割裂」的来源。 */
+
+/* ---------- 标题栏 ---------- */
+.app-header__bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.app-header__side {
+  display: flex;
+  align-items: center;
+  min-width: 88rpx;
+  padding-left: 16rpx;
+}
+.app-header__side--right {
+  justify-content: flex-end;
+  padding-left: 0;
+  padding-right: 16rpx;
+}
+
+/* 标题用绝对定位居中，避开左右热区的挤压 —— 320/375/430 都不跑偏 */
+.app-header__title-wrap {
+  position: absolute;
+  left: 88rpx;
+  right: 88rpx;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.app-header__title {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.app-header--dark .app-header__title { color: var(--c-on-strong); }
+
+.app-header__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: var(--r-pill);
+}
+
+.app-header__back--active { background: #f1f3f7; }
+.app-header__back--active-dark { background: rgba(255, 255, 255, 0.16); }
+
+.app-header__back--glass { background: rgba(255, 255, 255, 0.1); }
+
+.app-header__back-icon {
+  width: 40rpx;
+  height: 40rpx;
+}

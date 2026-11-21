@@ -1,0 +1,7 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "搜索",
+  "usingComponents": {
+    "app-header": "/components/ui/app-header/index"
+  }
+}

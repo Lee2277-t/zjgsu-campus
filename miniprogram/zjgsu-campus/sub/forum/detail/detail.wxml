@@ -1,0 +1,372 @@
+<!-- sub/forum/detail/detail.wxml —— 帖子详情（投票 + 留言） -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="{{post ? post.board : '帖子详情'}}" showBack dark="{{isHole}}" bg="{{isHole ? '#171438' : ''}}" border="{{!isHole}}" />
+
+<!-- 树洞帖整套换成树洞的深底：白底进树洞详情会像走错了地方 -->
+<!-- detail-page--tall：有待发图片时底栏变高，页面底部要同步留出更多空间 -->
+<view class="container detail-page {{isHole ? 'detail-page--hole' : ''}} {{pendingImages.length ? 'detail-page--tall' : ''}}">
+  <!-- 加载 / 已删除 / 找不到 / 正常内容：四种状态只走一条条件链 -->
+  <view wx:if="{{loading}}" class="card detail__loading">
+    <view class="title-lg">正在加载…</view>
+    <view class="hint">帖子内容马上就好</view>
+  </view>
+  <view wx:elif="{{gone}}" class="card">
+    <view class="title-lg">这条内容已经被删除</view>
+    <view class="hint">它可能因为违规被处理了，也可能已经被作者删掉。</view>
+    <view class="muted">如果这是误判，可以联系审核员恢复。</view>
+    <view class="btn-ghost tap detail__back" bindtap="goBack">返回论坛</view>
+  </view>
+  <view wx:elif="{{missing}}" class="card">
+    <view class="title-lg">这条内容不见了</view>
+    <view class="hint">它可能已经被删除，或者当前账号没有查看权限。链接失效的话，从列表里重新找找看。</view>
+    <view class="btn-ghost tap detail__back" bindtap="goBack">返回论坛</view>
+  </view>
+  <block wx:else>
+    <view class="card">
+      <view class="detail__head">
+        <view class="tag tag--forum">{{post.board}}</view>
+        <view wx:if="{{post.kind === 'topic'}}" class="tag tag--campus">
+          <image class="detail__mini-icon" src="/assets/icons/list-checks--campus.svg" mode="aspectFit" />
+          <text>信息墙</text>
+        </view>
+        <text class="detail__time">{{post.time}}</text>
+        <!-- 浏览人数：不影响排序，但读者判断「这条有没有人在看」靠它；
+             它同时是举报下架门槛的分母（见云函数 report-rules.js 的分档表） -->
+        <!-- 浏览人数。低于门槛时 viewsText 是空串，这一行整个不出现 ——
+             「1 人看过」那种数字只会让刚发完帖的人不想再发 -->
+        <text wx:if="{{viewsText}}" class="detail__time detail__views">{{viewsText}}</text>
+      </view>
+
+      <!-- 作者行：头像 + 名字（原来只有一行光秃秃的名字，在卡片最下面）。
+           位置放在板块标签/时间下面、正文上面 —— 「谁发的」是读完标签后的第一问，
+           压在正文底下就成了签名，得翻到底才知道是谁写的。
+           匿名帖走「默认头像 + 默认名」：showAvatar 为空 → 渲染成「匿」字圆，
+           名字用 showAuthor 里的代号，主页入口也一并收掉（点进去就等于把人认出来了）。
+           头像加载失败退回文字头像，不留空圆框（见 detail.js 的 onPostAvatarError） -->
+      <view class="detail__byline">
+        <view class="detail__ava">
+          <image
+            wx:if="{{post.showAvatar && !postAvatarFailed}}"
+            class="detail__ava-img"
+            src="{{post.showAvatar}}"
+            mode="aspectFill"
+            binderror="onPostAvatarError"
+          />
+          <view wx:else class="detail__ava-txt">{{post.avatarText}}</view>
+        </view>
+        <text class="detail__byline-name truncate">{{post.showAuthor}}</text>
+        <text
+          wx:if="{{post.authorOpenid && !post.anonymous}}"
+          class="detail__author detail__byline-go tap"
+          data-openid="{{post.authorOpenid}}"
+          catchtap="goAuthor"
+        >看TA的主页 ›</text>
+      </view>
+
+      <view wx:if="{{post.courseName}}" class="detail__course tap" data-id="{{post.courseId}}" bindtap="goCourse">
+        <image class="detail__mini-icon" src="/assets/icons/book-open--brand.svg" mode="aspectFit" />
+        <text class="detail__course-text">{{post.courseName}}</text>
+        <text class="detail__course-go">查看课程详情 ›</text>
+      </view>
+
+      <!-- 普通帖可以没标题：整行不渲染，别在正文上方留一条空白 -->
+      <view wx:if="{{post.title}}" class="title-lg detail__title" bindlongpress="onCopyPostText"><text user-select="{{true}}">{{post.title}}</text></view>
+      <!-- 信息墙的正文位是空的，补一句说明，顺便告诉他信息该去哪儿看 -->
+      <view wx:if="{{post.kind === 'topic'}}" class="detail__topic-intro">
+        这条只列了主题，具体信息收在下面 —— 需要的话往这儿留言，也有人在这里留了。
+      </view>
+      <view wx:else class="detail__body" bindlongpress="onCopyPostText"><text user-select="{{true}}">{{post.content}}</text></view>
+
+      <view wx:if="{{postImages.length}}" class="detail__images">
+        <image show-menu-by-longpress wx:for="{{postImages}}" wx:key="*this" class="detail__img tap img-fb" src="{{item}}" mode="aspectFill" data-imgs="{{postImages}}" bindtap="previewImages"></image>
+      </view>
+
+      <view class="detail__ops">
+        <!-- 树洞帖没有踩；赞在这里就叫「赞」——「抱抱」归下面三连专用，避免同名 -->
+        <view class="detail__op {{post.liked ? 'detail__op--on' : ''}} tap" bindtap="onLike">
+          <image class="detail__op-icon" src="{{post.liked ? '/assets/icons/thumbs-up--brand600.svg' : '/assets/icons/thumbs-up--muted.svg'}}" mode="aspectFit" />
+          <text>{{isHole ? '赞 ' : ''}}{{post.likes}}</text>
+        </view>
+        <view wx:if="{{!isHole}}" class="detail__op {{post.disliked ? 'detail__op--no' : ''}} tap" bindtap="onDislike">
+          <image class="detail__op-icon" src="{{post.disliked ? '/assets/icons/thumbs-down--brand600.svg' : '/assets/icons/thumbs-down--muted.svg'}}" mode="aspectFit" />
+          <text>{{post.dislikes}}</text>
+        </view>
+        <button class="detail__op detail__op--btn" open-type="share" size="mini">
+          <image class="detail__op-icon" src="/assets/icons/share-2--muted.svg" mode="aspectFit" />
+          <text>分享</text>
+        </button>
+        <view class="detail__op detail__op--fav {{favorited ? 'detail__op--fav-on' : ''}} tap" catchtap="onFavorite">
+          <image class="detail__op-icon" src="{{favorited ? '/assets/icons/star--market.svg' : '/assets/icons/star--muted.svg'}}" mode="aspectFit" />
+          <text>{{favorited ? '已收藏' : '收藏'}}</text>
+        </view>
+        <view wx:if="{{post.hidden && canRestore}}" class="detail__op tap" catchtap="onRestore">恢复展示</view>
+        <view wx:elif="{{post.hidden}}" class="detail__op detail__op--warn tap" catchtap="onReport">继续举报</view>
+        <!-- 自己的帖子：「编辑」和「删除」并存。
+             这两个是两种代价完全不同的动作 ——
+             编辑是修正（打错字、信息过期），删了就没了。
+             把它们拆成两个互斥分支的话，用户想改一个字就只能删掉重发，
+             丢掉原有的点赞和评论。对作者来说那是不可逆的损失 -->
+        <block wx:elif="{{isMine}}">
+          <view class="detail__op tap" catchtap="onEdit">编辑</view>
+          <view class="detail__op detail__op--danger tap" catchtap="onDelete">删除</view>
+        </block>
+        <block wx:else>
+          <view wx:if="{{canChat}}" class="detail__op tap" catchtap="goChat">打个招呼</view>
+          <view class="detail__op detail__op--warn tap" catchtap="onReport">举报</view>
+        </block>
+        <!-- 审核员直删：不走举报队列。只对他人帖子显示；自己的帖子已有「删除」 -->
+        <view wx:if="{{isMod && !isMine}}" class="detail__op detail__op--warn tap" catchtap="onAdminDelete">管理员删除</view>
+        <block wx:if="{{isMod}}">
+          <view class="detail__op {{postGuarded ? 'detail__op--on' : ''}} tap" catchtap="onTogglePostProtect">{{postGuarded ? '取消保护' : '保护帖子'}}</view>
+          <view class="detail__op {{pinned ? 'detail__op--on' : ''}} tap" catchtap="onTogglePostPin">{{pinned ? '取消置顶' : '置顶'}}</view>
+        </block>
+      </view>
+
+      <!-- 改过的帖子说一声。不是为了免责，而是因为
+           别人读到一段和记忆中不一样的文字时，需要知道它被改过，
+           而不是怀疑自己记错了 -->
+      <view wx:if="{{post.edited}}" class="detail__tip detail__tip--soft">
+        这条帖子发布后修改过<text wx:if="{{post.editedAt}}">（{{post.editedAt}}）</text>。
+      </view>
+
+      <view wx:if="{{post.status === 'deleted'}}" class="detail__tip">
+        这条内容已经被删除（可能是历史上被举报自动处理的）。确认是误判的话，点「恢复展示」就能放回来。
+      </view>
+      <view wx:elif="{{post.hidden}}" class="detail__tip">
+        这条内容已因举报暂停展示。确认没有违规的话，点「恢复展示」即可。
+      </view>
+
+      <!-- 树洞三连：抱抱 / 递茶 / 摸摸头。
+           和列表页读的是 store 里同一份数据 —— 在这里点了，回列表立刻是亮着的，
+           反过来也一样。三个可以同时给，再点一次同一个是收回 -->
+      <view wx:if="{{isHole}}" class="detail__reacts">
+        <view class="detail__react {{post.myReact.hug ? 'detail__react--on' : ''}} tap"
+              data-k="hug" catchtap="onReact">💖 抱抱<text wx:if="{{post.react.hug > 0}}"> {{post.react.hug}}</text></view>
+        <view class="detail__react {{post.myReact.tea ? 'detail__react--on' : ''}} tap"
+              data-k="tea" catchtap="onReact">🍵 递茶<text wx:if="{{post.react.tea > 0}}"> {{post.react.tea}}</text></view>
+        <view class="detail__react {{post.myReact.pat ? 'detail__react--on' : ''}} tap"
+              data-k="pat" catchtap="onReact">🐾 摸摸头<text wx:if="{{post.react.pat > 0}}"> {{post.react.pat}}</text></view>
+      </view>
+    </view>
+
+    <!-- 投票帖：顶部一张概览，下面一张 vote-card 承载「未投票 / 已投票 / 已结束」三态 -->
+    <view wx:if="{{post.kind === 'vote' && post.voteData}}" class="poll-hero">
+      <view class="poll-hero__ring">
+        <view class="poll-hero__core">
+          <text class="poll-hero__count">{{post.voteData.totalVotes}}</text>
+          <text class="poll-hero__unit">人已参与</text>
+        </view>
+      </view>
+      <view class="poll-hero__text">
+        <view class="poll-hero__mode">{{post.voteData.multiple ? '多选' : '单选'}} · {{post.voteData.anonymous ? '匿名投票' : '公开投票'}}</view>
+        <view class="poll-hero__deadline">
+          <image class="poll-hero__clock" src="/assets/icons/clock--white.svg" mode="aspectFit" />
+          <text>{{post.voteData.ended ? '投票已结束，结果仅供查看' : '投票进行中，每 10 秒自动更新'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <vote-card wx:if="{{post.kind === 'vote' && post.voteData}}" voteData="{{post.voteData}}" bindvote="onVoteCast" />
+
+    <!-- 信息墙的评论区要跟普通帖区分开：这里叫「N 条信息」 -->
+    <view class="detail__section">
+      <image class="detail__section-icon" src="/assets/icons/message-circle--brand.svg" mode="aspectFit" />
+      <!-- 数字用 commentCount（云端权威），不用 comments.length ——
+           本地列表只是缓存，没拉到的时候它是空的，而帖子明明有 12 条留言 -->
+      <text>{{post.kind === 'topic' ? '信息（' + post.commentCount + '）' : '评论（' + post.commentCount + '）'}}</text>
+    </view>
+
+    <view wx:if="{{post.commentCount === 0}}" class="empty">{{post.kind === 'topic' ? '还什么都没有，第一个留下的' : '还没有评论，抢沙发～'}}</view>
+
+    <!-- 留言区是两层：一级留言 + 挂在它下面的二级回复。
+         commentTree 由数据层编好（父被删的回复会被提升为一级，不会凭空消失） -->
+    <view wx:for="{{post.commentTree}}" wx:key="id" wx:for-item="c" wx:for-index="cIdx" class="card comment">
+      <!-- 头像列：点它进这位同学的名片。既没有 openid（老留言）又不是自己留的就别跳，
+           也不带按下的反馈 —— 按一下没反应比不按更让人困惑。
+           匿名帖下这个入口整个收掉（canProfile 为假）：点进去就是真名和TA发过的
+           所有帖子，匿名当场破功。名字都已经换成代号了，头像却是通往真人的门。
+           加载失败 → 退回名字首字的文字头像，不留空圆框（见 onCommentAvatarError） -->
+      <view
+        class="comment__ava {{c.canProfile ? 'tap' : ''}}"
+        data-openid="{{c.authorOpenid}}"
+        data-mine="{{c.mine}}"
+        catchtap="goCommenter"
+      >
+        <image
+          wx:if="{{c.showAvatar && !c.avaErr}}"
+          class="comment__ava-img"
+          src="{{c.showAvatar}}"
+          mode="aspectFill"
+          data-p="{{cIdx}}"
+          binderror="onCommentAvatarError"
+        ></image>
+        <view wx:else class="comment__ava-txt">{{c.avatarText}}</view>
+      </view>
+
+      <view class="comment__main">
+        <view class="comment__head">
+          <text class="comment__name truncate">{{c.author}}</text>
+          <text class="muted comment__time">{{c.time}}</text>
+        </view>
+        <!-- 纯图留言没有文字：不留一个空行，否则气泡里会多出一截空白 -->
+        <view wx:if="{{c.content}}" class="comment__content" data-id="{{c.id}}" bindlongpress="onCopyCommentText"><text user-select="{{true}}">{{c.content}}</text></view>
+        <!-- 缩略图网格：1 / 2 / 3 张各一种排法（见 wxss），点开看大图。
+             data-c / data-i 只传下标：data-* 里塞数组会被拼成逗号串，fileID
+             带斜杠和点，拆不回来 -->
+        <view wx:if="{{c.images.length}}" class="comment__imgs imgs-{{c.images.length >= 3 ? 'many' : c.images.length}}">
+          <image
+            wx:for="{{c.images}}"
+            wx:for-item="img"
+            wx:for-index="iIdx"
+            wx:key="*this"
+            show-menu-by-longpress
+            class="comment__img tap img-fb"
+            src="{{img}}"
+            mode="aspectFill"
+            lazy-load
+            data-id="{{c.id}}"
+            data-i="{{iIdx}}"
+            bindtap="previewCommentImages"
+          ></image>
+        </view>
+
+        <!-- 操作行：赞 / 踩 / 回复 / （删除 或 举报）。
+             赞踩互斥由数据层保证（一个人只有一格），再点一次同一个就是取消；
+             计数是「基线 + 我这一票」算出来的，连点也不会多涨一个。
+             删除与举报放在这一行右侧：它们是「对这条留言采取措施」，
+             和「表达态度」是同一类动作，分两处反而让人找不到 -->
+        <view class="cacts">
+          <view class="cact {{c.liked ? 'cact--on' : ''}} tap" data-id="{{c.id}}" data-k="like" catchtap="onCommentVote">
+            <image class="cact__icon" src="{{c.liked ? '/assets/icons/thumbs-up--brand600.svg' : '/assets/icons/thumbs-up--muted.svg'}}" mode="aspectFit" />
+            <text wx:if="{{c.likes > 0}}" class="cact__num">{{c.likes}}</text>
+          </view>
+          <view class="cact {{c.disliked ? 'cact--no' : ''}} tap" data-id="{{c.id}}" data-k="dislike" catchtap="onCommentVote">
+            <image class="cact__icon" src="{{c.disliked ? '/assets/icons/thumbs-down--brand600.svg' : '/assets/icons/thumbs-down--muted.svg'}}" mode="aspectFit" />
+            <text wx:if="{{c.dislikes > 0}}" class="cact__num">{{c.dislikes}}</text>
+          </view>
+          <view class="cact tap" data-id="{{c.id}}" catchtap="onReplyComment">
+            <image class="cact__icon" src="/assets/icons/message-circle--muted.svg" mode="aspectFit" />
+            <text class="cact__num">回复</text>
+          </view>
+          <text wx:if="{{c.canRemove}}" class="cact-text cact-text--danger tap" data-id="{{c.id}}" catchtap="onRemoveComment">删除</text>
+          <text wx:elif="{{!c.reported}}" class="cact-text tap" data-id="{{c.id}}" catchtap="onReportComment">举报</text>
+          <text wx:else class="cact-text cact-text--mute">{{c.reportLabel || '已举报'}}</text>
+          <text wx:if="{{c.canProtect}}" class="cact-text {{c.protected ? 'cact-text--mute' : ''}} tap" data-id="{{c.id}}" catchtap="onToggleCommentProtect">{{c.protected ? '已保护' : '保护'}}</text>
+        </view>
+
+        <!-- 回复区。默认只露前几条，剩下的收在「展开 N 条回复」里 ——
+             信息墙上一个群号下面挂十几条追问是常态，不折叠首屏就被回复填满了。
+             二级和三级回复在树里是并列的（buildCommentTree 把三级也提到这一层），
+             所以缩进永远只有一档，不会越聊越窄；「回复的是谁」不靠层级表达，
+             而是靠 replyToName 那句「回复 @某某」—— 四级才在数据层折回三级 -->
+        <view wx:if="{{c.replyCount > 0}}" class="replies">
+          <block wx:for="{{c.replies}}" wx:for-item="r" wx:for-index="rIdx" wx:key="id">
+            <view wx:if="{{c.expanded || rIdx < replyPreview}}" class="reply">
+              <!-- 二级回复的头像同样受 canProfile 管 —— 只收一级那一处，
+                   回复里的头像就是另一扇通往真人的门 -->
+              <view class="reply__ava {{r.canProfile ? 'tap' : ''}}" data-openid="{{r.authorOpenid}}" data-mine="{{r.mine}}" catchtap="goCommenter">
+                <image wx:if="{{r.showAvatar && !r.avaErr}}" class="reply__ava-img" src="{{r.showAvatar}}" mode="aspectFill" data-p="{{cIdx}}" data-r="{{rIdx}}" binderror="onCommentAvatarError"></image>
+                <view wx:else class="reply__ava-txt">{{r.avatarText}}</view>
+              </view>
+              <view class="reply__main">
+                <view class="reply__head">
+                  <text class="reply__name truncate">{{r.author}}</text>
+                  <!-- 「回复 @某某」：被回复的人名由数据层算好，
+                       折叠之后它和挂载点可能不是同一条，不能靠 parentId 反查 -->
+                  <text wx:if="{{r.replyToName}}" class="reply__to">回复 {{r.replyToName}}</text>
+                  <text class="muted comment__time">{{r.time}}</text>
+                </view>
+                <view wx:if="{{r.content}}" class="reply__content" data-id="{{r.id}}" bindlongpress="onCopyCommentText"><text user-select="{{true}}">{{r.content}}</text></view>
+                <view wx:if="{{r.images.length}}" class="reply__imgs">
+                  <image
+                    wx:for="{{r.images}}"
+                    wx:for-item="img"
+                    wx:for-index="jIdx"
+                    wx:key="*this"
+                    class="comment__img tap img-fb"
+                    src="{{img}}"
+                    mode="aspectFill"
+                    lazy-load
+                    data-id="{{r.id}}"
+                    data-i="{{jIdx}}"
+                    bindtap="previewCommentImages"
+                  ></image>
+                </view>
+                <view class="cacts cacts--sm">
+                  <view class="cact {{r.liked ? 'cact--on' : ''}} tap" data-id="{{r.id}}" data-k="like" catchtap="onCommentVote">
+                    <image class="cact__icon" src="{{r.liked ? '/assets/icons/thumbs-up--brand600.svg' : '/assets/icons/thumbs-up--muted.svg'}}" mode="aspectFit" />
+                    <text wx:if="{{r.likes > 0}}" class="cact__num">{{r.likes}}</text>
+                  </view>
+                  <view class="cact {{r.disliked ? 'cact--no' : ''}} tap" data-id="{{r.id}}" data-k="dislike" catchtap="onCommentVote">
+                    <image class="cact__icon" src="{{r.disliked ? '/assets/icons/thumbs-down--brand600.svg' : '/assets/icons/thumbs-down--muted.svg'}}" mode="aspectFit" />
+                    <text wx:if="{{r.dislikes > 0}}" class="cact__num">{{r.dislikes}}</text>
+                  </view>
+                  <view class="cact tap" data-id="{{r.id}}" catchtap="onReplyComment">
+                    <image class="cact__icon" src="/assets/icons/message-circle--muted.svg" mode="aspectFit" />
+                    <text class="cact__num">回复</text>
+                  </view>
+                  <text wx:if="{{r.canRemove}}" class="cact-text cact-text--danger tap" data-id="{{r.id}}" catchtap="onRemoveComment">删除</text>
+                  <text wx:elif="{{!r.reported}}" class="cact-text tap" data-id="{{r.id}}" catchtap="onReportComment">举报</text>
+                  <text wx:else class="cact-text cact-text--mute">{{r.reportLabel || '已举报'}}</text>
+                  <text wx:if="{{r.canProtect}}" class="cact-text {{r.protected ? 'cact-text--mute' : ''}} tap" data-id="{{r.id}}" catchtap="onToggleCommentProtect">{{r.protected ? '已保护' : '保护'}}</text>
+                </view>
+              </view>
+            </view>
+          </block>
+          <!-- 折叠入口。replyCount 是总数，hiddenCount 是「还藏着几条」 -->
+          <view wx:if="{{c.hiddenCount > 0}}" class="reply-more fold-toggle tap" data-id="{{c.id}}" catchtap="onToggleReplies">
+            {{c.expanded ? '收起回复' : '展开 ' + c.hiddenCount + ' 条回复'}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 固定底栏：Web 版是 sticky，这里用 fixed（.container 上没有 transform，固定定位不会退化）。
+       选中的图在输入行上方排成一条缩略图带 —— 和私信页同一套布局与手感：
+       点图看大图、右上角 × 撤掉。缩略图带出现时底栏会变高，
+       .detail-page 同步加高 padding，最后一条留言不会被压住 -->
+  <view class="input-bar">
+    <!-- 回复条：说清在回谁，并给一个退出。
+         不这么做的话，用户点完「回复」之后忘了自己在回谁，
+         发出去的那条会挂在莫名其妙的位置 —— 而撤回一条留言要找帖主 -->
+    <view wx:if="{{replyTo}}" class="ib-reply">
+      <image class="ib-reply__icon" src="/assets/icons/message-circle--brand.svg" mode="aspectFit" />
+      <text class="ib-reply__text">回复 {{replyTo.author}}</text>
+      <view class="ib-reply__x tap" catchtap="onCancelReply">
+        <image class="ib-reply__x-icon" src="/assets/icons/x--ink.svg" mode="aspectFit" />
+      </view>
+    </view>
+
+    <view wx:if="{{pendingImages.length}}" class="ib-pending">
+      <view wx:for="{{pendingImages}}" wx:key="*this" class="ib-thumb">
+        <image class="ib-thumb__img img-fb" src="{{item}}" mode="aspectFill" data-idx="{{index}}" bindtap="previewPending" />
+        <view class="ib-thumb__x" data-idx="{{index}}" catchtap="onRemovePending">
+          <image class="ib-thumb__x-icon" src="/assets/icons/x--ink.svg" mode="aspectFit" />
+        </view>
+      </view>
+      <view class="ib-pending__note">{{pendingImages.length}}/{{maxImg}}</view>
+    </view>
+
+    <view class="ib-row">
+      <view class="ib-pick tap {{uploading || pendingImages.length >= maxImg ? 'ib-pick--off' : ''}}" bindtap="chooseImages">
+        <image class="ib-pick__icon" src="/assets/icons/image--brand.svg" mode="aspectFit" />
+      </view>
+      <textarea class="input-bar__input" placeholder="{{replyTo ? '回复 ' + replyTo.author + '…' : (post.kind === 'topic' ? '留下你的群号 / 联系方式' : '友善评论，理性发言')}}" value="{{commentText}}" bindinput="onComment" maxlength="300" auto-height="{{true}}" show-confirm-bar="{{false}}" cursor-spacing="20" />
+      <!-- 文字或图片有一个就能发；上传中锁住按钮，避免同一批图被提交两次。
+           回复态下按钮写「回复」：发送之后这条会挂在某条留言下面，
+           写「发送」的话用户看不出自己这一下是在回谁 -->
+      <view class="input-bar__send {{(commentText || pendingImages.length) && !uploading ? '' : 'input-bar__send--off'}} tap" bindtap="sendComment">{{uploading ? '上传中' : (replyTo ? '回复' : '发送')}}</view>
+    </view>
+  </view>
+
+  <view class="refresh-fab tap" style="bottom: calc(330rpx + env(safe-area-inset-bottom));" bindtap="manualRefresh">
+    <image class="refresh-fab__icon" src="/assets/icons/refresh--faint.svg" mode="aspectFit" />
+    <text>刷新</text>
+  </view>
+
+  <view class="backtop-fab tap" style="bottom: calc(220rpx + env(safe-area-inset-bottom));" bindtap="backTop">
+    <image class="backtop-fab__icon" src="/assets/icons/arrow-up--faint.svg" mode="aspectFit" />
+    <text>顶部</text>
+  </view>
+</view>

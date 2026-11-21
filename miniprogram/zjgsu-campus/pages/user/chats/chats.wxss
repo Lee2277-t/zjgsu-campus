@@ -1,0 +1,233 @@
+/* pages/user/chats —— 私信列表。类名统一 cs-*，
+   .card / .card--flush / .skeleton / .truncate 这些来自 app.wxss。 */
+
+/* ---------- 顶部快捷入口（找同学 / 申请列表） ---------- */
+.cs-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding-bottom: 16rpx;
+}
+
+/* ---------- 骨架屏（容器用 .skeleton 语义类，这里只管尺寸） ---------- */
+.cs-sk { margin-bottom: 24rpx; }
+.cs-sk-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin-bottom: 40rpx;
+}
+.cs-sk-row:last-child { margin-bottom: 0; }
+.cs-sk-avatar { width: 96rpx; height: 96rpx; border-radius: var(--r-pill); }
+.cs-sk-body { flex: 1; min-width: 0; }
+.cs-sk-line { height: 24rpx; border-radius: var(--r-m); margin-bottom: 16rpx; }
+.cs-sk-line--short { width: 40%; }
+.cs-sk-line--mid { width: 85%; margin-bottom: 0; }
+
+/* ---------- 会话列表 ---------- */
+.cs-list { padding: 0; }
+
+.cs-item {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 24rpx 32rpx;
+  min-height: 148rpx;
+}
+.cs-item + .cs-item { border-top: 2rpx solid var(--c-line); }
+
+.cs-avatar-wrap { position: relative; flex-shrink: 0; }
+.cs-avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-profile-soft);
+}
+.cs-avatar--text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-profile);
+  font-size: var(--fs-title);
+  font-weight: 600;
+}
+.cs-dot {
+  position: absolute;
+  right: 0;
+  top: 0;
+  min-width: 24rpx;
+  height: 24rpx;
+  padding: 0 8rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-danger);
+  color: var(--c-on-strong);
+  font-size: var(--fs-micro);
+  line-height: 24rpx;
+  text-align: center;
+}
+
+.cs-main {
+  flex: 1;
+  min-width: 0;
+}
+.cs-top {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+}
+.cs-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.cs-time {
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+/* 「非好友」标记。中性灰底而不是警告色 —— 它是关系分类，不是出错：
+   对方还没同意只是状态，红色会让人以为自己哪里做错了。
+   align-self 覆盖父级的 baseline：小标签按文字基线对齐会飘在半空中 */
+.cs-tag {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 2rpx 12rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-fill);
+  color: var(--c-muted);
+  font-size: var(--fs-micro);
+  line-height: 1.6;
+}
+.cs-last {
+  margin-top: 8rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+}
+
+/* ---------- 云端没拉到（与「真的没有会话」分开显示） ----------
+   用中性的灰而不是警告红：这是「这次没拿到」，不是用户做错了什么 */
+.cs-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  background: var(--c-fill);
+  box-shadow: none;
+}
+.cs-warn__icon {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+.cs-warn__text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-aux);
+  line-height: 1.6;
+  color: var(--c-muted);
+}
+
+/* ---------- 消息请求箱 ---------- */
+.cs-req { margin-bottom: 24rpx; }
+
+.cs-req__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 24rpx 32rpx;
+}
+.cs-req__icon {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+}
+.cs-req__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+}
+/* 数字用品牌青蓝的胶囊：这是「有人找你」的信号，
+   用灰就淹在标题里了，用红又和未读红点抢注意力 */
+.cs-req__count {
+  flex-shrink: 0;
+  min-width: 36rpx;
+  padding: 2rpx 16rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-profile-soft);
+  color: var(--c-profile);
+  font-size: var(--fs-tag);
+  font-weight: 600;
+  text-align: center;
+}
+.cs-req__toggle {
+  flex-shrink: 0;
+  font-size: var(--fs-aux);
+  color: var(--c-brand);
+}
+
+.cs-req__body { border-top: 2rpx solid var(--c-line); }
+
+.cs-req__item {
+  padding: 24rpx 32rpx;
+}
+.cs-req__item + .cs-req__item { border-top: 2rpx solid var(--c-line); }
+
+.cs-req__top {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+.cs-req__top .cs-avatar { width: 80rpx; height: 80rpx; }
+
+.cs-req__acts {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  padding-left: 104rpx; /* 和头像列对齐，让两个按钮落在正文那一列下面 */
+}
+.cs-req__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-profile);
+  color: var(--c-on-strong);
+  font-size: var(--fs-sub);
+  font-weight: 600;
+}
+/* 「忽略」是次级动作：给白底描边，免得两个实心按钮抢注意力被点错 */
+.cs-req__btn--ghost {
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  color: var(--c-muted);
+  font-weight: 500;
+}
+
+.cs-req__more,
+.cs-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-brand);
+}
+.cs-req__more { border-top: 2rpx solid var(--c-line); }
+.cs-more {
+  margin-top: -8rpx;
+  margin-bottom: 24rpx;
+}
+
+/* 长按删除的提示。说明文字用小号灰，不争注意力 */
+.cs-note {
+  margin: 0 8rpx 40rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+  text-align: center;
+}

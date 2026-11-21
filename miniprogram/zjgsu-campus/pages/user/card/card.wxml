@@ -1,0 +1,182 @@
+<!-- pages/user/card —— 同学名片。
+     别人能在我这里看到多少，取决于我们之间的关系，五种分支都在下面：
+     陌生人（只有昵称头像）/ 已发起等通过 / 好友（看得到联系方式 + 可解除）
+     / 已拉黑 / 自己。
+     加好友与解除好友两个动作都由 utils/friend.js 统一实现（留言弹窗 + 二次确认），
+     这张名片只是它的一个落点，不是它的专属入口。
+     云函数参数没动，只换了呈现：场景色走个人资料青蓝 #2F9FD6。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="{{profile ? profile.nickName : '同学名片'}}" showBack />
+
+<block wx:if="{{profile}}">
+  <view class="container cd">
+    <view class="card cd-hero">
+      <view class="cd-avatar">
+        <!-- 同样要带上 avaFail：地址在 ≠ 图能出来，出不来就退回首字母 -->
+        <image show-menu-by-longpress wx:if="{{profile.avatarUrl && !avaFail}}" class="cd-avatar-img" src="{{profile.avatarUrl}}" mode="aspectFill" binderror="onAvaError" />
+        <view wx:else class="cd-avatar-text">{{profile.avatarText}}</view>
+      </view>
+      <view class="cd-info">
+        <!-- 备注名排在最上面，且用主标题字号：好友名单、私信标题、名片三处
+             显示的必须是同一个名字，中途换一个就像换了个人 -->
+        <view class="title-lg truncate">{{alias || profile.nickName}}</view>
+        <view wx:if="{{alias}}" class="cd-alias truncate">原名：{{profile.nickName}}</view>
+        <view wx:if="{{profile.college}}" class="cd-tag">
+          <image class="cd-tag-icon" src="/assets/icons/book-open--profile.svg" mode="aspectFit" />
+          {{profile.college}}
+        </view>
+        <view wx:elif="{{profile.motto}}" class="cd-motto">{{profile.motto}}</view>
+        <view wx:else class="muted">还没填写学院</view>
+        <view wx:if="{{profile.profileIncomplete}}" class="muted cd-incomplete">{{isMe ? '你还没有完善资料' : 'TA 还没有完善资料'}}</view>
+      </view>
+    </view>
+
+    <!-- 关系状态条：把「现在是什么关系、接下来会怎样」写在最显眼的位置。
+         这一块之前散落在下面好几张卡片里（联系方式 / 关系管理 / 陌生人三选一），
+         用户要读完两三屏才能拼出现在是什么状况。
+         图标名由 JS 算好放在 relIcon（见 card.js）：WXML 的 {{}} 虽然能写三元，
+         但三层嵌套的可读性等于没有，而且拼错了编译期不报错，只会留一块空白 -->
+    <view wx:if="{{!isMe}}" class="card cd-rel {{blockedMe ? 'cd-rel--off' : ''}}">
+      <image class="cd-rel__icon" src="{{relIcon}}" mode="aspectFit" />
+      <view class="cd-rel__main">
+        <view class="cd-rel__title">{{relTitle}}</view>
+        <view class="cd-rel__sub">{{relSub}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{isMe}}" class="card">
+      <view class="cd-sec">
+        <image class="cd-sec-icon" src="/assets/icons/user-round--profile.svg" mode="aspectFit" />
+        这是你自己的名片
+      </view>
+      <view class="muted">同学只能看到你愿意展示的部分。</view>
+      <base-button class="cd-btn" block bindtap="onEditMine">编辑我的资料</base-button>
+    </view>
+
+    <!-- 好友：看得到联系方式 -->
+    <view wx:if="{{isFriend && profile.contactValue}}" class="card cd-contact">
+      <view class="cd-sec">
+        <image class="cd-sec-icon" src="/assets/icons/message-square--campus.svg" mode="aspectFit" />
+        我们的联系方式
+      </view>
+      <view class="cd-contact-row bg-profile-soft">
+        <text class="cd-contact-label">{{contactLabel}}</text>
+        <text class="cd-contact-value truncate">{{profile.contactValue}}</text>
+      </view>
+      <base-button class="cd-btn" variant="secondary" block bindtap="onCopy" data-v="{{profile.contactValue}}">
+        <image class="cd-btn-icon" src="/assets/icons/copy--muted.svg" mode="aspectFit" />复制
+      </base-button>
+      <view class="cd-tip">只有同意之后才看得到，不同意就一直看不到。</view>
+    </view>
+
+    <view wx:if="{{isFriend && !profile.contactValue}}" class="card">
+      <view class="cd-sec">
+        <image class="cd-sec-icon" src="/assets/icons/users--campus.svg" mode="aspectFit" />
+        对方还没填联系方式
+      </view>
+      <view class="muted">等他补充之后这里就会显示。</view>
+    </view>
+
+    <!-- 解除好友：关系类的操作就长在关系里，不另开「好友管理」入口。
+         要重新加回来得对方再同意一次，所以走一次带名字的二次确认（见 utils/friend.js） -->
+    <view wx:if="{{isFriend}}" class="card">
+      <view class="cd-sec">
+        <image class="cd-sec-icon" src="/assets/icons/users-round--profile.svg" mode="aspectFit" />
+        关系管理
+      </view>
+      <view class="cd-tip">解除后要重新申请、互相同意才能再加为同学，联系方式也不再可见。私信回到每人 {{strangerQuota}} 条，聊天记录保留。</view>
+      <base-button class="cd-btn" variant="secondary" block size="sm" bindtap="onEditAlias">{{alias ? '编辑备注名' : '设置备注名'}}</base-button>
+      <base-button class="cd-btn" variant="ghost" block size="sm" bindtap="onUnfriend">解除好友关系</base-button>
+    </view>
+
+    <!-- 陌生人：加好友 / 发消息。
+         两个动作并排、都要看得见：「加好友」解决的是「以后能不能一直聊」，
+         「发消息」解决的是「我现在就想问一句」。只留前者，想先确认对方是谁的同学
+         会被迫发一条申请去打扰人；只留后者，聊到第 3 条就撞上配额、没有出口。
+         留言收进「加好友」的弹窗里填（原来这里是第三个独立按钮「附一句留言」） -->
+    <view wx:if="{{!isMe && !isFriend}}" class="card">
+      <view wx:if="{{waiting}}" class="cd-waiting">
+        <image class="cd-waiting-icon" src="/assets/icons/clock--market.svg" mode="aspectFit" />
+        对方通过以后，你就能看到对方的{{profile.contactType ? contactLabel : '联系方式'}}。
+      </view>
+      <view wx:if="{{waiting && msg}}" class="cd-tip">你的留言：{{msg}}</view>
+      <view wx:if="{{!waiting}}" class="cd-tip">对方会收到提醒，同意之后你们才能互相看到联系方式。</view>
+
+      <!-- 纯文字操作区：不再使用胶囊、描边或按钮背景。
+           两列严格对应：加好友 / 拉黑，发消息 / 举报。 -->
+      <view class="cd-text-actions {{waiting ? 'cd-text-actions--single' : ''}}">
+        <view wx:if="{{!waiting}}" class="cd-text-col">
+          <view class="cd-text-main tap" bindtap="onRequest">加好友</view>
+          <view wx:if="{{!blockedMe}}" class="cd-text-sub tap" bindtap="onToggleBlock">拉黑 TA</view>
+        </view>
+        <view class="cd-text-col">
+          <view class="cd-text-main cd-text-main--profile tap" bindtap="onChat">发消息</view>
+          <view wx:if="{{!blockedMe}}" class="cd-text-sub tap" bindtap="onReport">举报 TA</view>
+        </view>
+      </view>
+      <view wx:if="{{blockedMe}}" class="cd-unblock tap" bindtap="onToggleBlock">解除拉黑</view>
+    </view>
+
+    <!-- 好友页的举报入口放在管理卡片里：已经是同学时「拉黑」那一排不出现
+         （好友名单和私信里都有拉黑入口），但举报仍然需要出口 -->
+    <view wx:if="{{isFriend}}" class="card cd-tail-card">
+      <view class="cd-tail__btn tap" bindtap="onReport">举报这位同学</view>
+    </view>
+
+    <!-- TA 的历史发帖。匿名帖与树洞帖在服务端就被挡掉了，这里拿到的都是能公开的。
+         条数可能中途变多：先渲染本地缓存，云端结果回来后覆盖成完整的（见 card.js 的 loadPosts） -->
+    <view class="card">
+      <view class="cd-sec">
+        <image class="cd-sec-icon" src="/assets/icons/file-text--profile.svg" mode="aspectFit" />
+        {{isMe ? '我的发帖' : 'TA 的历史发帖'}}
+        <text wx:if="{{posts.length}}" class="cd-count">{{posts.length}}</text>
+      </view>
+      <view wx:if="{{posts.length}}" class="cd-posts">
+        <view class="cd-post tap" wx:for="{{posts}}" wx:key="id"
+              data-id="{{item.id}}" bindtap="goPost">
+          <view class="cd-post-main">
+            <view class="cd-post-title truncate">{{item.title}}</view>
+            <view class="cd-post-meta">
+              <text wx:if="{{item.board}}" class="cd-post-board">{{item.board}}</text>
+              <text wx:if="{{item.time}}" class="cd-post-time">{{item.time}}</text>
+              <text class="cd-post-stat">{{item.likes}} 赞 · {{item.commentCount}} 评论</text>
+            </view>
+          </view>
+          <!-- 已下架的条目只有审核员看得到（服务端控制），点进去照样能看内容 -->
+          <text wx:if="{{item.hidden}}" class="cd-post-flag">已下架</text>
+          <text wx:elif="{{item.pinned}}" class="cd-post-flag cd-post-flag--pin">置顶</text>
+          <image wx:else class="cd-post-go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+        </view>
+      </view>
+      <view wx:else class="muted">{{isMe ? '你还没发过帖子。' : 'TA 还没发过帖子。'}}</view>
+    </view>
+
+    <!-- 管理操作：只在云函数确认我是审核员、且看的不是自己时出现。
+         权限一律以 whoami 的 isMod 为准 —— 本地名单只管「我的」页入口显隐，不是权限 -->
+    <view wx:if="{{isMod && !isMe}}" class="card cd-admin">
+      <view class="cd-sec">
+        <image class="cd-sec-icon" src="/assets/icons/shield--danger.svg" mode="aspectFit" />
+        管理操作
+      </view>
+      <block wx:if="{{ban}}">
+        <view class="cd-ban">
+          <view class="cd-ban-reason">已封禁 · {{ban.reason || '未填原因'}}</view>
+          <view class="cd-ban-time">封禁于 {{ban.atText || '（时间未知）'}}</view>
+        </view>
+        <base-button class="cd-btn" variant="secondary" block bindtap="onUnban">解除封禁</base-button>
+      </block>
+      <block wx:else>
+        <view class="cd-tip">封禁后 TA 不能再发帖、评论和私信，已有内容保留。用于卖片、刷广告这类把账号当广告位的情况。</view>
+        <base-button class="cd-btn" variant="danger" block bindtap="onBan">封禁该账号</base-button>
+      </block>
+    </view>
+  </view>
+</block>
+
+<empty-state
+  wx:else
+  icon="user-round"
+  iconColor="faint"
+  title="这位同学还没有填资料"
+  description="等 TA 补充之后，这里就能看到 TA 的学院和联系方式了"
+/>

@@ -1,0 +1,39 @@
+* text=auto
+# 本文件自己也落回 * text=auto，于是在 Windows 上被判定成「该转 CRLF」，
+# 每次 git add 都要念一句 LF will be replaced by CRLF。
+# 显式钉成 lf，那条噪音就没了。
+.gitattributes text eol=lf
+
+*.ts text eol=lf
+*.vue text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.css text eol=lf
+*.wxml text eol=lf
+*.wxss text eol=lf
+*.html text eol=lf
+# SVG 是文本，微信按 XML 解析，但行尾统一了才能进 diff、也才不会让
+# check-eol 把它当成「既不是 LF 也不是 CRLF」的第三方
+*.svg text eol=lf
+
+# 下面这几个扩展名**不匹配** `*.js`，所以此前一直落回 `* text=auto`：
+# 在 Windows 上 auto 等于「检出时转成 CRLF」，于是 .py/.cjs 在工作区是 CRLF、
+# 而库里的 blob 是 LF —— git 每次碰它们都要警告一句
+# 「LF will be replaced by CRLF the next time Git touches it」，
+# 那条警告混进脚本输出里，会让人以为检查挂了。
+# 统一声明成 lf：与库里 blob 一致，不产生任何改动，也不再警告。
+*.py text eol=lf
+*.cjs text eol=lf
+*.mjs text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.zip binary
+*.bundle binary
+

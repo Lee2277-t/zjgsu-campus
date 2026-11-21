@@ -1,0 +1,232 @@
+/* pages/tool/places/places.wxss —— 校园地点 / 地图
+   复用 app.wxss：.container / .card / .tag / .muted / .faint / .truncate /
+   .chip / .chip-on / .chip-row / .title-md。本页独有全部是 pl-*。
+   地图、bottom-sheet 都用 position: fixed / 原生 map，.container 上没有 transform。 */
+
+.pl-page { padding-top: 8rpx; }
+.pl-loading { padding: 60rpx 0; text-align: center; font-size: var(--fs-sub); color: var(--c-faint); }
+
+/* ---------------- 顶部地图 ---------------- */
+.pl-map-wrap {
+  position: relative;
+  width: 100%;
+  height: 460rpx;
+  margin-bottom: 24rpx;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  background: var(--c-profile-soft);
+  box-shadow: var(--sh-1);
+}
+.pl-map { width: 100%; height: 460rpx; }
+
+.pl-map--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  background: var(--c-fill);
+}
+.pl-map__icon { width: 88rpx; height: 88rpx; }
+.pl-map__hint { font-size: var(--fs-aux); color: var(--c-faint); }
+.pl-map__retry { margin-top: 12rpx; font-size: var(--fs-tag); color: var(--c-brand); }
+
+.pl-map__foot {
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  height: 64rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-pill);
+  /* 压在地图上：微信 map 的底色不跟随主题（永远是浅色地图），
+     所以这条提示用 --c-over / --c-over-text（深浅同值的那一对），
+     不能用 --c-card + --c-muted —— 那会在深色模式下变成深底配浅字压在浅色地图上 */
+  background: var(--c-over);
+  border: 2rpx solid var(--c-over);
+  font-size: var(--fs-tag);
+  color: var(--c-over-text);
+}
+.pl-map__foot-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+.pl-map__foot text { flex: 1; min-width: 0; }
+
+/* ---------------- 搜索 ---------------- */
+/* 贴着地图下沿，比分类筛选更高一层：找地方的人先想到的是「搜一下」，
+   不是「它属于哪个分类」 */
+.pl-search { margin-bottom: 20rpx; }
+.pl-search .search-bar__icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
+.pl-search .search-bar__input { flex: 1; min-width: 0; font-size: var(--fs-body); }
+.pl-search .search-bar__clear { padding: 0 12rpx; }
+.pl-search .search-bar__clear-icon { width: 32rpx; height: 32rpx; }
+
+/* 有关键词时提示一下「分类没在起作用」，免得以为筛选坏了 */
+.pl-search__note {
+  margin: 0 8rpx 16rpx;
+  font-size: var(--fs-tag);
+  line-height: 1.5;
+}
+
+/* ---------------- 分类 ---------------- */
+.pl-cats { margin-bottom: 4rpx; }
+
+/* ---------------- 补充地点入口 ---------------- */
+.pl-add { display: flex; align-items: center; gap: 20rpx; margin-bottom: 24rpx; }
+.pl-add--hover { opacity: 0.72; }
+.pl-add__ico {
+  width: 80rpx;
+  height: 80rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-l);
+  background: var(--c-campus-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pl-add__ico-img { width: 40rpx; height: 40rpx; }
+.pl-add__main { flex: 1; min-width: 0; }
+.pl-add__title { font-size: var(--fs-body); font-weight: 600; color: var(--c-text); }
+.pl-add__sub { margin-top: 4rpx; font-size: var(--fs-tag); line-height: 1.5; }
+.pl-add__go { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+
+/* ---------------- 添加表单 ---------------- */
+.pl-form { padding-bottom: 28rpx; }
+.pl-loc {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  min-height: 120rpx;
+  margin-top: 8rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+}
+.pl-loc--hover { opacity: 0.72; }
+.pl-loc__ico {
+  width: 72rpx;
+  height: 72rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-l);
+  background: var(--c-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pl-loc__ico-img { width: 36rpx; height: 36rpx; }
+.pl-loc__main { flex: 1; min-width: 0; }
+.pl-loc__name { font-size: var(--fs-sub); color: var(--c-text); }
+.pl-loc__sub { margin-top: 4rpx; font-size: var(--fs-tag); }
+.pl-loc__go { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+
+/* input 必须定高，否则默认行高会把字拦腰截断 */
+.pl-field {
+  width: 100%;
+  box-sizing: border-box;
+  height: 88rpx;
+  margin-top: 16rpx;
+  padding: 0 24rpx;
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  background: var(--c-sunken);
+  border-radius: var(--r-l);
+}
+.pl-types { margin: 8rpx 0 0; }
+.pl-submit { margin-top: 24rpx; }
+
+/* ---------------- 地点列表 ---------------- */
+.pl-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 0 8rpx 12rpx;
+}
+.pl-head__main { min-width: 0; }
+.pl-head__sub { margin-top: 4rpx; font-size: var(--fs-tag); }
+.pl-head__count { flex-shrink: 0; }
+
+.pl-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+.pl-item--hover { opacity: 0.72; }
+
+.pl-item__ico {
+  width: 80rpx;
+  height: 80rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-l);
+  background: var(--c-campus-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pl-item__ico-img { width: 40rpx; height: 40rpx; }
+
+.pl-item__main { flex: 1; min-width: 0; }
+.pl-item__name-row { display: flex; align-items: center; gap: 12rpx; min-width: 0; }
+.pl-item__name { min-width: 0; font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); }
+.pl-item__tag { flex-shrink: 0; font-size: var(--fs-micro); }
+.pl-item__desc { margin-top: 8rpx; font-size: var(--fs-aux); line-height: 1.5; }
+.pl-item__addr { margin-top: 4rpx; font-size: var(--fs-tag); }
+
+.pl-item__nav {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  min-height: 88rpx;
+  padding-left: 8rpx;
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-brand);
+}
+.pl-item__nav-icon { width: 28rpx; height: 28rpx; }
+
+.pl-del {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-height: 88rpx;
+  padding-left: 8rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-danger);
+}
+.pl-del--hover { opacity: 0.6; }
+.pl-del__icon { width: 28rpx; height: 28rpx; }
+
+/* ---------------- 到达方式抽屉内容 ---------------- */
+.pl-sheet__opts { display: flex; flex-direction: column; gap: 16rpx; }
+
+.pl-opt {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  min-height: 120rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+}
+.pl-opt--hover { opacity: 0.72; }
+.pl-opt__ico {
+  width: 80rpx;
+  height: 80rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pl-opt__ico--brand { background: var(--c-brand-soft); }
+.pl-opt__ico--campus { background: var(--c-campus-soft); }
+.pl-opt__ico-img { width: 40rpx; height: 40rpx; }
+
+.pl-opt__main { flex: 1; min-width: 0; }
+.pl-opt__title { font-size: var(--fs-body); font-weight: 600; color: var(--c-text); }
+.pl-opt__desc { margin-top: 4rpx; font-size: var(--fs-tag); }
+.pl-opt__go { width: 28rpx; height: 28rpx; flex-shrink: 0; }

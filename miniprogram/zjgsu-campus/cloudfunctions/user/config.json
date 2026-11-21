@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "openapi": [
+      "security.msgSecCheck",
+      "security.mediaCheckAsync",
+      "subscribeMessage.send",
+      "security.imgSecCheck"
+    ]
+  },
+  "triggers": [
+    {
+      "name": "dailyWebSync",
+      "type": "timer",
+      "config": "0 30 7 * * * *"
+    },
+    {
+      "name": "mediaAuditSweep",
+      "type": "timer",
+      "config": "0 */10 * * * * *"
+    }
+  ]
+}

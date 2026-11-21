@@ -1,0 +1,663 @@
+/* pages/campus/campus —— 校园 Tab（活动信息 / 校历 / 地点地图）
+   底部留出 tabBar + 悬浮按钮的位置，内容不会被压住。
+   三档切换的选中色统一走校园绿 #19A66A / 浅底 #E9F8F1；
+   过渡只碰 background-color / color / opacity，不做位移，容器上也不加 transform
+   （.container 一旦有 transform，页内的悬浮按钮会退化成相对定位）。 */
+
+/* --------------------------------------------------------------------------
+   -------------------------------------------------------------------------- */
+.hub {
+  padding-bottom: 220rpx;
+}
+
+/* --------------------------------------------------------------------------
+   三档分段控件
+   -------------------------------------------------------------------------- */
+.hub-seg {
+  display: flex;
+  gap: 8rpx;
+  padding: 8rpx;
+  margin-bottom: 24rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-fill);
+}
+.hub-seg__item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  min-height: 96rpx;
+  border-radius: var(--r-pill);
+  transition: background-color 0.26s ease, color 0.26s ease;
+}
+.hub-seg__icon {
+  width: 34rpx;
+  height: 34rpx;
+  transition: opacity 0.26s ease;
+}
+.hub-seg__label {
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: color 0.26s ease;
+}
+.hub-seg__item.on {
+  background: var(--c-campus-soft);
+}
+.hub-seg__item.on .hub-seg__label {
+  color: var(--c-campus);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   发布入口卡
+   -------------------------------------------------------------------------- */
+.hub-publish {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+  background: linear-gradient(90deg, var(--c-campus-soft) 0%, var(--c-card) 72%);
+  border: 2rpx solid #e9f8f1;
+  box-shadow: none;
+}
+.hub-publish__icon {
+  flex-shrink: 0;
+  width: 76rpx;
+  height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-l);
+  background: var(--c-card);
+  box-shadow: 0 4rpx 14rpx rgba(25, 166, 106, 0.14);
+}
+.hub-publish__icon-img {
+  width: 40rpx;
+  height: 40rpx;
+}
+.hub-publish__body {
+  flex: 1;
+  min-width: 0;
+}
+.hub-publish__title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.hub-publish__sub {
+  margin-top: 4rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+}
+.hub-publish__go {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  min-height: 88rpx;
+  padding-left: 8rpx;
+}
+.hub-publish__go-text {
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-campus);
+}
+.hub-publish__go-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+/* --------------------------------------------------------------------------
+   官网同步条
+   -------------------------------------------------------------------------- */
+/* 我发起的活动：一条轻量入口，别跟「发布」抢注意力 ——
+   它平时只是「看自己发过什么」，真正救命的时候是被举报下架后从这里进去恢复 */
+.hub-mine {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-height: var(--hit);
+  padding: 0 24rpx;
+  margin: -8rpx 0 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-card);
+  border: 2rpx solid var(--c-fill);
+}
+.hub-mine--hover { opacity: 0.72; }
+.hub-mine__icon { width: 32rpx; height: 32rpx; flex-shrink: 0; }
+.hub-mine__text { flex: 1; min-width: 0; font-size: var(--fs-sub); color: var(--c-muted); }
+.hub-mine__go { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+
+.hub-sync {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  background: var(--c-card);
+  box-shadow: none;
+  border: 2rpx solid var(--c-fill);
+}
+.hub-sync__main {
+  flex: 1;
+  min-width: 0;
+}
+.hub-sync__title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.hub-sync__icon {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+}
+.hub-sync__sub {
+  margin-top: 8rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+.hub-sync__btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-campus-soft);
+  color: var(--c-campus-deep);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hub-sync__btn-icon {
+  width: 30rpx;
+  height: 30rpx;
+}
+/* 同步中：图标转起来，文字保持不动，避免按钮宽度跳 */
+.hub-sync__btn.spin .hub-sync__btn-icon {
+  animation: hubSpin 0.9s linear infinite;
+}
+@keyframes hubSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   活动过滤 + 区块标题
+   -------------------------------------------------------------------------- */
+.hub-filt {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 0 20rpx;
+}
+/* 原来这里只有 padding，实际高度 ≈ 49rpx：手指点不准，而且和全局 .chip
+   （min-height 88rpx）差了一倍 —— 同样是"筛选胶囊"，两个页两个高度。
+   取 --hit-sm 这一档：它是给"一行要挤好几个的次要操作"准备的，
+   比 .chip 矮一档是因为校园页信息密度高，筛选区不能占掉半屏。 */
+.hub-filt__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--hit-sm);
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  border-radius: var(--r-pill);
+  padding: 0 24rpx;
+  margin: 0 16rpx 16rpx 0;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.hub-filt__chip.on {
+  color: var(--c-on-strong);
+  background: var(--c-campus);
+  border-color: var(--c-campus);
+  font-weight: 600;
+}
+.hub-filt__empty {
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+  text-align: center;
+  padding: 32rpx 0;
+}
+.hub-sec {
+  margin-bottom: 8rpx;
+}
+.hub-sec__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding-left: 4rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-campus-deep);
+  margin: 8rpx 0 16rpx;
+}
+.hub-sec__icon {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   活动卡
+   -------------------------------------------------------------------------- */
+.ev__top {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 44rpx;
+}
+.ev__tag--official {
+  background: var(--c-brand-soft);
+  color: var(--c-brand-deep);
+}
+.ev__src {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+.ev__link {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-brand);
+}
+.ev__link-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+.ev__badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-campus-deep);
+  background: var(--c-campus-soft);
+  border-radius: var(--r-pill);
+  padding: 8rpx 20rpx;
+}
+.ev__badge--joined {
+  color: var(--c-brand-deep);
+  background: var(--c-brand-soft);
+}
+
+.ev__title {
+  margin-top: 12rpx;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+.ev__row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 12rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  min-width: 0;
+}
+.ev__row-icon {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+}
+.ev__desc {
+  margin-top: 12rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.6;
+}
+
+.ev__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid var(--c-line);
+}
+.ev__stat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.ev__stat-icon {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+}
+.ev__more {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  min-height: 88rpx;
+  padding-left: 8rpx;
+}
+.ev__more-text {
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  color: var(--c-campus);
+}
+.ev__foot-icon {
+  width: 26rpx;
+  height: 26rpx;
+}
+
+/* 招聘会卡片底部的收藏按钮。
+   只有招聘会这一类才有它，官网公告走的是「看完就走」的路子，不给收藏入口。 */
+.ev__fav {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-height: 88rpx;
+  padding: 0 16rpx 0 8rpx;
+}
+.ev__fav--on .ev__fav-text {
+  font-weight: 600;
+  color: #b8860b;
+}
+.ev__fav-icon {
+  width: 30rpx;
+  height: 30rpx;
+}
+.ev__fav-text {
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+
+/* --------------------------------------------------------------------------
+   校历
+   -------------------------------------------------------------------------- */
+.cal-hero {
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, var(--c-campus) 0%, #0f8f58 100%);
+  box-shadow: 0 12rpx 28rpx rgba(25, 166, 106, 0.22);
+  color: var(--c-on-strong);
+}
+.cal-hero__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: var(--fs-aux);
+  color: rgba(255, 255, 255, 0.75);
+}
+.cal-hero__icon {
+  width: 30rpx;
+  height: 30rpx;
+}
+.cal-hero__text {
+  margin-top: 12rpx;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.cal-list {
+  padding-left: 8rpx;
+}
+.cal-item {
+  position: relative;
+  padding-left: var(--sp-9);
+  transition: opacity 0.3s ease;
+}
+.cal-item.past { opacity: 0.5; }
+/* 时间轴竖线：从第一个节点连到最后一个 */
+.cal-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 13rpx;
+  top: 56rpx;
+  bottom: -14rpx;
+  width: 2rpx;
+  background: var(--c-campus);
+  opacity: 0.35;
+}
+.cal-item__dot {
+  position: absolute;
+  left: 6rpx;
+  top: 52rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-campus);
+  box-shadow: 0 0 0 6rpx #e9f8f1;
+}
+.cal-item__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+}
+.cal-item__main {
+  flex: 1;
+  min-width: 0;
+}
+.cal-item__name {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+.cal-item__date {
+  margin-top: 8rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.cal-item__note {
+  margin-top: 8rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+  line-height: 1.6;
+}
+.cal-item__days {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  max-width: 220rpx;
+  min-height: 56rpx;
+  padding: 8rpx 20rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-campus-soft);
+  color: var(--c-campus-deep);
+  font-size: var(--fs-tag);
+}
+.cal-item__days-icon {
+  width: 26rpx;
+  height: 26rpx;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   地点地图
+   -------------------------------------------------------------------------- */
+/* 搜索条：容器用 app.wxss 的 .search-bar（圆角胶囊 + 卡片底 + 阴影），
+   图标和输入框的尺寸在这里定 —— 各页的 .search-bar__* 都是各写各的，
+   放进 app.wxss 反而会互相牵制 */
+.hub-search { margin-bottom: 16rpx; }
+.hub-search .search-bar__icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
+.hub-search .search-bar__input { flex: 1; min-width: 0; font-size: var(--fs-body); }
+.hub-search .search-bar__clear { padding: 0 12rpx; }
+.hub-search .search-bar__clear-icon { width: 32rpx; height: 32rpx; }
+/* 有关键词时明说「分类没在起作用」，否则点了分类没反应会以为是坏了 */
+.hub-search__note {
+  margin: -4rpx 8rpx 16rpx;
+  font-size: var(--fs-tag);
+  line-height: 1.5;
+}
+
+.hub-cats {
+  margin-bottom: 20rpx;
+}
+.hub-cats__scroll {
+  white-space: nowrap;
+}
+.hub-chip {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 80rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  border: 2rpx solid var(--c-line);
+  background: var(--c-card);
+  color: var(--c-muted);
+  font-size: var(--fs-sub);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.hub-chip--on {
+  background: var(--c-campus);
+  border-color: var(--c-campus);
+  color: var(--c-on-strong);
+  font-weight: 600;
+}
+
+.pl {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  transition: background-color 0.24s ease, border-color 0.24s ease;
+}
+.pl.on {
+  border-color: var(--c-campus);
+  background: #f7fdfb;
+}
+.pl__icon {
+  flex-shrink: 0;
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-l);
+  background: var(--c-campus-soft);
+}
+.pl__icon-img {
+  width: 44rpx;
+  height: 44rpx;
+}
+.pl__body {
+  flex: 1;
+  min-width: 0;
+}
+.pl__name {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.pl__meta {
+  margin-top: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: var(--fs-tag);
+  min-width: 0;
+}
+.pl__cat {
+  flex-shrink: 0;
+  color: var(--c-campus-deep);
+  background: var(--c-campus-soft);
+  border-radius: var(--r-pill);
+  padding: 4rpx 16rpx;
+}
+.pl__desc {
+  min-width: 0;
+  color: var(--c-faint);
+}
+.pl__go {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2rpx;
+  min-height: 88rpx;
+}
+.pl__go-text {
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  color: var(--c-campus);
+}
+.pl__go-icon {
+  width: 26rpx;
+  height: 26rpx;
+}
+
+/* --------------------------------------------------------------------------
+   底部公共入口行 + 悬浮发布按钮
+   -------------------------------------------------------------------------- */
+.hub-more {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 112rpx;
+  margin-top: 8rpx;
+  padding: 24rpx 32rpx;
+  border-radius: var(--r-xl);
+  background: var(--c-card);
+  box-shadow: var(--sh-1);
+}
+.hub-more__icon {
+  width: 34rpx;
+  height: 34rpx;
+  flex-shrink: 0;
+}
+.hub-more__text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+}
+.hub-more__go {
+  width: 26rpx;
+  height: 26rpx;
+  flex-shrink: 0;
+  color: var(--c-faint);
+}
+
+.hub-fab {
+  right: 32rpx;
+  bottom: calc(32rpx + env(safe-area-inset-bottom));
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-campus);
+  box-shadow: 0 10rpx 26rpx rgba(25, 166, 106, 0.34);
+}
+.hub-fab__icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+/* --------------------------------------------------------------------------
+   空状态配图
+   -------------------------------------------------------------------------- */
+.empty-art {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 16rpx;
+}

@@ -1,0 +1,96 @@
+/* components/ui/net-tip/index.wxss */
+
+/* ---------- 细条：列表有缓存内容时挂在顶部 ---------- */
+.net-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: var(--sp-3) var(--sp-4) var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  min-height: 72rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-amber-soft);
+  border: 1rpx solid var(--c-line);
+}
+
+.net-bar__dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-amber);
+  flex: 0 0 auto;
+}
+
+.net-bar__text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-aux);
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+.net-bar__btn {
+  flex: 0 0 auto;
+  padding: 0 var(--sp-3);
+  min-height: 56rpx;
+  line-height: 56rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+  color: var(--c-brand-deep);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+}
+
+.net-bar__btn--busy { color: var(--c-muted); }
+
+/* ---------- 卡片：一条内容都渲染不出来时 ---------- */
+.net-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx var(--sp-8);
+  text-align: center;
+}
+
+.net-block__icon {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: var(--r-xl);
+  background: var(--c-fill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--sp-5);
+}
+
+.net-block__img { width: 56rpx; height: 56rpx; }
+
+.net-block__title {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.net-block__desc {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+
+.net-block__btn {
+  margin-top: var(--sp-6);
+  min-height: 88rpx;
+  padding: 0 var(--sp-8);
+  line-height: 88rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-brand-soft);
+  color: var(--c-brand-deep);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.net-block__btn--busy {
+  background: var(--c-fill);
+  color: var(--c-muted);
+}

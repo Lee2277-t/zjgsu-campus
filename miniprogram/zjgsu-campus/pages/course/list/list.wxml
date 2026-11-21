@@ -1,0 +1,265 @@
+<!-- pages/course/list/list.wxml
+     课程评价 / 老师评价 两个档位共用一套吸顶筛选：
+     分段 → 搜索 → 学院 → 课程类型 → 排序档位。搜索框在吸顶区里，滑到哪都还在手上。
+     课程档用 course-card（组件内自己判「暂无评分」），老师档还是原来那张两档分的卡片。 -->
+<page-meta page-style="{{themeStyle}}" />
+<view>
+  <sticky-filter>
+    <view class="ls-filter">
+      <!-- 分段控件：课程评价 / 老师评价 -->
+      <view class="segmented">
+        <view
+          wx:for="{{scopes}}"
+          wx:key="key"
+          class="segmented-item {{scopeMap[item.key] ? 'segmented-item-on' : ''}} tap"
+          data-s="{{item.key}}"
+          bindtap="onScope"
+        >{{item.label}}</view>
+      </view>
+
+      <!-- 搜索：换档时 placeholder 跟着变，底下搜的东西完全两样 -->
+      <view class="ls-search">
+        <image class="ls-search-icon" src="/assets/icons/search--faint.svg" mode="aspectFit" />
+        <input
+          class="ls-search-input"
+          placeholder="{{scope === 'teacher' ? '搜索老师姓名或学院' : '搜索课程名或专业'}}"
+          value="{{keyword}}"
+          bindinput="onSearch"
+          confirm-type="search"
+        />
+        <view wx:if="{{hasKeyword}}" class="ls-clear tap" bindtap="onClear">
+          <image class="ls-clear-icon" src="/assets/icons/x--muted.svg" mode="aspectFit" />
+        </view>
+      </view>
+
+      <!-- 学院 + 课程类型只有课程档用得上：老师档筛的是人，学院写在人名下面 -->
+      <block wx:if="{{scope === 'course'}}">
+        <scroll-view class="no-scrollbar ls-scroll {{hasKeyword ? 'ls-dim' : ''}}" scroll-x="true">
+          <view class="chip-row">
+            <view class="chip {{ctype === '全部' ? 'chip-on' : ''}} tap" data-t="全部" bindtap="onCtype">全部</view>
+            <view class="chip {{ctype !== '全部' ? 'chip-on' : ''}} tap" bindtap="onToggleCtype">
+              课程类型{{ctype !== '全部' ? '：' + ctype : ''}} <text class="fold-toggle">{{ctypeOpen ? '收起' : '展开'}}</text>
+            </view>
+            <view class="chip {{college !== '全部' ? 'chip-on' : ''}} tap" bindtap="onToggleCollege">
+              学院{{college !== '全部' ? '：' + college : ''}} <text class="fold-toggle">{{collegeOpen ? '收起' : '展开'}}</text>
+            </view>
+          </view>
+        </scroll-view>
+        <view wx:if="{{ctypeOpen}}" class="ls-college-panel">
+          <scroll-view class="no-scrollbar ls-scroll {{hasKeyword ? 'ls-dim' : ''}}" scroll-x="true">
+            <view class="chip-row">
+              <view wx:for="{{ctypes}}" wx:key="*this" class="chip {{ctype === item ? 'chip-on' : ''}} {{item !== '全部' && ctypeCounts[item] === 0 ? 'chip-empty' : ''}} tap" data-t="{{item}}" bindtap="onCtype">
+                {{item}}<text wx:if="{{item !== '全部'}}" class="ls-chip-num">{{ctypeCounts[item] || 0}}</text>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+        <view wx:if="{{collegeOpen}}" class="ls-college-panel">
+          <scroll-view class="no-scrollbar ls-scroll {{hasKeyword ? 'ls-dim' : ''}}" scroll-x="true">
+            <view class="chip-row">
+              <view wx:for="{{colleges}}" wx:key="*this" class="chip {{college === item ? 'chip-on' : ''}} tap" data-c="{{item}}" bindtap="onCollege">{{item}}</view>
+            </view>
+          </scroll-view>
+        </view>
+      </block>
+
+      <!-- 条数 + 排序档位 -->
+      <view class="ls-bar">
+        <text class="ls-count">{{scope === 'teacher' ? '共 ' + total + ' 位老师' : '共 ' + total + ' 门'}}<text wx:if="{{fuzzyCount}}" class="ls-fuzzy"> · 模糊 {{fuzzyCount}}</text></text>
+        <scroll-view class="no-scrollbar ls-sorts" scroll-x="true">
+          <view class="ls-sort-row">
+            <view
+              wx:for="{{sortItems}}"
+              wx:key="k"
+              class="ls-sort {{sort === item.k ? 'ls-sort-on' : ''}} tap"
+              data-s="{{item.k}}"
+              bindtap="onSortPick"
+            >{{item.label}}</view>
+          </view>
+        </scroll-view>
+        <view class="ls-reverse {{reverse ? 'ls-reverse-on' : ''}} tap" bindtap="onToggleReverse">{{reverse ? '正序' : '倒序'}}</view>
+      </view>
+    </view>
+  </sticky-filter>
+
+  <view class="container">
+    <!-- ========== 老师档 ========== -->
+    <block wx:if="{{scope === 'teacher'}}">
+      <!-- 独立入口（第 8 点）：不用先找一门课，直接按老师姓名写评价。
+           以前想评价一位老师，必须先落到某门课下，
+           于是「这位老师教得好不好」永远只能混在课程评价里说 -->
+      <view class="card ls-tch-add">
+        <view class="ls-tch-add__main">
+          <view class="title-sm">给老师单独写评价</view>
+          <view class="muted ls-tch-add__sub">不用挂在某门课下，按姓名就能发</view>
+        </view>
+        <view class="ls-tch-add__btn tap" bindtap="onAddTeacherReview">去写 ›</view>
+      </view>
+
+      <view
+        wx:for="{{display}}"
+        wx:key="name"
+        class="card ls-tch pressable"
+        data-name="{{item.name}}"
+        bindtap="onTapItem"
+      >
+        <view class="ls-tch-left">
+          <view class="title-sm ls-tch-name">{{item.name}}</view>
+          <view wx:if="{{item.count || item.verified}}" class="ls-tch-meta">
+            <text wx:if="{{!item.verified && item.count}}" class="ls-tch-pending">待补充</text>
+            <text wx:if="{{item.count}}">{{!item.verified ? '· ' : ''}}{{item.count}} 条评价</text>
+            <text wx:elif="{{item.verified}}">还没有人评价</text>
+          </view>
+          <view wx:if="{{item.courseNames}}" class="muted ls-tch-sub">教过：{{item.courseNames}}<text wx:if="{{item.courseCount > 2}}"> 等 {{item.courseCount}} 门</text></view>
+          <view wx:elif="{{item.scoredCount}}" class="muted ls-tch-sub">其中 {{item.scoredCount}} 人单独打了老师分</view>
+        </view>
+        <view class="ls-tch-right">
+          <view class="ls-stars">
+            <block wx:if="{{item.hasScore}}">
+              <image wx:for="{{[1,2,3,4,5]}}" wx:for-item="s" wx:key="*this" class="ls-star-icon" src="/assets/icons/star--{{s <= item.avgRound ? 'amber' : 'faint'}}.svg" mode="aspectFit" />
+            </block>
+            <text wx:else class="ls-star-none">还没人打分</text>
+          </view>
+          <view class="ls-tch-scores">
+            <text wx:if="{{item.hasScore}}" class="ls-tch-score">老师 {{item.avg}}</text>
+            <text wx:if="{{item.courseAvg > 0}}" class="ls-tch-score ls-tch-score--muted">课程 {{item.courseAvg}}</text>
+          </view>
+          <view wx:if="{{item.goodRate >= 0}}" class="ls-tch-good">好评率 {{item.goodRate}}%</view>
+        </view>
+      </view>
+    </block>
+
+    <!-- ========== 课程档 ========== -->
+    <block wx:else>
+      <course-card
+        wx:for="{{display}}"
+        wx:key="id"
+        wx:for-item="course"
+        courseName="{{course.name}}"
+        score="{{course.avgScore}}"
+        tags="{{course.tags}}"
+        reviewsCount="{{course.reviewCount}}"
+        college="{{course.college}}"
+        major="{{course.major}}"
+        credit="{{course.credit}}"
+        goodRate="{{course.goodRate}}"
+        to="/sub/course/detail/detail?id={{course.id}}"
+      />
+    </block>
+
+    <!-- ========== 空状态：四种成因文案不一样，按钮也不一样 ========== -->
+    <view wx:if="{{display.length === 0}}" class="ls-empty">
+      <view wx:if="{{hasKeyword}}">
+        <view wx:if="{{scope === 'teacher'}}">
+          <view class="empty-title">没有叫「{{keyword}}」的老师</view>
+          <view class="empty-desc">没找到这位老师。写评价时填上姓名就能建立。</view>
+          <view class="ls-btn tap" bindtap="onAddTeacherReview">＋ 直接写「{{keyword}}」的评价</view>
+          <view class="ls-btn ls-btn--ghost tap" data-s="course" bindtap="onScope">回到课程评价</view>
+        </view>
+        <view wx:else>
+          <view class="empty-title">课程库里还没有「{{keyword}}」</view>
+          <view class="empty-desc">没找到这门课，可以点下面添加。</view>
+          <view class="ls-btn tap" bindtap="goAdd">＋ 添加这门课</view>
+        </view>
+      </view>
+      <view wx:elif="{{scope === 'course' && ctype !== '全部'}}">
+        <view class="empty-title">{{college === '全部' ? '课程库里暂时没有' : college + '暂时没有'}}「{{ctype}}」的课</view>
+        <view class="empty-desc">专业必修与选修已合并为专业课。</view>
+        <view class="ls-btn tap" data-t="{{ctype}}" bindtap="goAdd">＋ 添加一门{{ctype}}</view>
+      </view>
+      <view wx:else>
+        <view class="empty-title">{{scope === 'teacher' ? '还没有老师评价，写评价时填上老师名就有了' : '没有匹配的课程，换个关键词试试～'}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{display.length === 0}}" class="ls-tail">没有更多了</view>
+    <view wx:elif="{{hasMore}}" class="ls-tail">上滑加载更多…</view>
+
+    <!-- 可信度提示：匿名展示这件事得说清楚，不然同学以为这是官方数据 -->
+    <view class="card ls-trust">
+      <view class="ls-trust-icon">
+        <image src="/assets/icons/book-open--brand.svg" mode="aspectFit" />
+      </view>
+      <view class="ls-trust-main">
+        <view class="title-sm">这些评价可信吗？</view>
+        <view class="muted ls-trust-sub">默认匿名展示，评分和标签由同学共建。</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 新增评价：和论坛 / 闲置两个 tab 页同一个位置、同一种形态的「＋」。
+       课程评价必须挂在一门课上（云端口碑表按 courseId 聚合），
+       所以先弹半屏选课，点中课程直接进填写页；
+       老师档不挂课程，一点就走 —— 少一步选课，多一步直接开写 -->
+  <view class="ls-fab tap" bindtap="onFab">
+    <image class="ls-fab__icon" src="/assets/icons/plus--white.svg" mode="aspectFit" />
+  </view>
+
+  <bottom-sheet
+    open="{{pickerOpen}}"
+    title="写评价 · 先选一门课"
+    description="这条评价会挂在这门课下，全校同学都能看到"
+    bind:close="onPickerClose"
+  >
+    <view class="ls-pick">
+      <view class="search-bar">
+        <image class="search-bar__icon" src="/assets/icons/search--faint.svg" mode="aspectFit" />
+        <input
+          class="search-bar__input"
+          placeholder="搜课程名 / 专业 / 学院"
+          value="{{pickKw}}"
+          bindinput="onPickInput"
+          confirm-type="search"
+        />
+        <view wx:if="{{pickKw}}" class="search-bar__clear tap" bindtap="onPickClear">
+          <image class="search-bar__clear-icon" src="/assets/icons/x--muted.svg" mode="aspectFit" />
+        </view>
+      </view>
+
+      <view class="ls-pick__hint">{{pickKw ? '找到 ' + pickList.length + ' 门' : '评价最多的几门'}}</view>
+
+      <scroll-view class="ls-pick__list no-scrollbar" scroll-y>
+        <view
+          wx:for="{{pickList}}"
+          wx:key="id"
+          class="ls-pick__row tap"
+          data-id="{{item.id}}"
+          bindtap="onPickCourse"
+        >
+          <view class="ls-pick__main">
+            <view class="ls-pick__name truncate">{{item.name}}</view>
+            <view class="ls-pick__sub truncate">{{item.college}}{{item.major ? ' · ' + item.major : ''}}</view>
+          </view>
+          <text class="ls-pick__num">{{item.reviewCount || 0}} 条</text>
+          <image class="ls-pick__chevron" src="/assets/icons/chevron-right--muted.svg" mode="aspectFit" />
+        </view>
+
+        <view wx:if="{{pickList.length === 0}}" class="ls-pick__empty">
+          没搜到「{{pickKw}}」。课程库里确实没有，就点下面那一条把它加进来。
+        </view>
+      </scroll-view>
+
+      <!-- 课程库里没有他要的课：不让他先关面板再去找「添加课程」入口 ——
+           带着刚打的字直接去添加页，加完落在课程详情页，底部就是「写评价」 -->
+      <view class="ls-pick__add tap" bindtap="onPickAdd">
+        <image class="ls-pick__add-icon" src="/assets/icons/plus--brand.svg" mode="aspectFit" />
+        <text class="ls-pick__add-text">{{pickKw ? '添加「' + pickKw + '」这门课' : '课程库里没有？添加一门'}}</text>
+        <image class="ls-pick__chevron" src="/assets/icons/chevron-right--muted.svg" mode="aspectFit" />
+      </view>
+    </view>
+  </bottom-sheet>
+
+  <!-- 隐私授权弹窗：挂在首页上，进入小程序就主动问一次。
+       放在这里而不是 App.onLaunch，是因为页面渲染完成后弹窗才弹得出来。 -->
+  <privacy-modal />
+
+  <view class="refresh-fab tap" style="bottom: calc(260rpx + env(safe-area-inset-bottom));" bindtap="manualRefresh">
+    <image class="refresh-fab__icon" src="/assets/icons/refresh--faint.svg" mode="aspectFit" />
+    <text>刷新</text>
+  </view>
+
+  <view class="backtop-fab tap" style="bottom: calc(150rpx + env(safe-area-inset-bottom));" bindtap="backTop">
+    <image class="backtop-fab__icon" src="/assets/icons/arrow-up--faint.svg" mode="aspectFit" />
+    <text>顶部</text>
+  </view>
+</view>

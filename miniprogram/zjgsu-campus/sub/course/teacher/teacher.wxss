@@ -1,0 +1,185 @@
+/* pages/course/teacher —— 老师评价页。类名一律 tc-*，
+   .card / .title-lg / .title-md / .muted 这些来自 app.wxss。 */
+.tc-page {
+  padding-bottom: 200rpx;
+}
+
+.tc-head {
+  text-align: center;
+}
+.tc-meta {
+  margin-top: 8rpx;
+}
+.tc-verified {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-aux);
+  color: var(--c-campus-deep);
+}
+.tc-check {
+  width: 26rpx;
+  height: 26rpx;
+  margin-right: 8rpx;
+}
+.tc-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20rpx;
+}
+.tc-avg {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  color: var(--c-amber);
+  line-height: 1.1;
+  margin-right: 16rpx;
+}
+.tc-stars {
+  display: flex;
+  align-items: center;
+}
+.tc-star-icon {
+  margin-right: 2rpx;
+}
+.tc-star-icon { width: 28rpx; height: 28rpx; }
+.tc-scored {
+  margin-left: 16rpx;
+  font-size: var(--fs-aux);
+}
+.tc-course-line {
+  width: 100%;
+  margin-top: 12rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+}
+
+.tc-section {
+  margin: 8rpx 4rpx 16rpx;
+  font-size: var(--fs-h2);
+}
+
+/* ---------- 审核员：老师投诉后的批量下架 ---------- */
+.tc-mod {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+  padding: 20rpx 24rpx;
+  border: 2rpx dashed var(--c-danger);
+  border-radius: var(--r-l);
+}
+.tc-mod__text {
+  flex: 1;
+  font-size: var(--fs-aux);
+  line-height: 1.6;
+  color: var(--c-muted);
+}
+.tc-mod__btn {
+  flex-shrink: 0;
+  margin-left: 20rpx;
+  padding: 12rpx 24rpx;
+  border-radius: var(--r-m);
+  background: var(--c-danger);
+  color: #fff;
+  font-size: var(--fs-aux);
+  font-weight: 600;
+}
+.tc-mod__btn:active { opacity: 0.7; }
+.tc-mod__btn--off { opacity: 0.5; }
+
+.tc-empty {
+  padding: 48rpx 32rpx;
+  text-align: center;
+}
+.tc-empty-icon {
+  width: 96rpx;
+  height: 96rpx;
+  margin-bottom: 16rpx;
+}
+
+/* 一条评价里两档分：老师分 / 课程分行排列，谁跟谁对不上就不会看错 */
+.tc-review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+/* 右侧那一撮（时间 + 举报）：整块右对齐，举报跟在时间后面 */
+.tc-review-op {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.tc-review-report {
+  margin-left: 24rpx;
+  padding: 0 4rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-brand);
+}
+.tc-review-name {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tc-review-course {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-brand);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tc-review-time {
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+}
+.tc-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-top: 16rpx;
+}
+.tc-score-row {
+  display: flex;
+  align-items: center;
+}
+.tc-score-label {
+  width: 56rpx;
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+.tc-score-text {
+  margin-left: 12rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-amber);
+}
+.tc-review-content {
+  margin-top: 16rpx;
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.tc-bar {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--c-card);
+  border-top: 2rpx solid var(--c-line);
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+}
+
+/* 次要入口：不挂课程只评人。用文字链接而不是第二颗按钮，
+   免得两个主按钮并排，同学不知道该点哪个 */
+.tc-bar__alt {
+  margin-top: 16rpx;
+  text-align: center;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}

@@ -1,0 +1,55 @@
+/* sub/mine/reviews/reviews.wxss —— 我的课程评价
+   复用 app.wxss：.container / .card / .truncate / .clamp2 / .pressable。
+   本页独有的全部是 mr-*（mr = my reviews）。
+   配色和「我的」页原来那份评价列表一致（星级用琥珀黄、删除用红底），
+   搬过来之后看起来还是同一套东西。
+   注意：.container 上不能出现 transform（会让页内 fixed 元素退化），本文件没有。 */
+
+.mr-page { padding-top: 8rpx; }
+
+.mr-bar { margin: 0 8rpx 16rpx; font-size: var(--fs-aux); color: var(--c-faint); }
+
+.mr-item { padding-bottom: 24rpx; }
+.mr-item--hover { opacity: 0.72; }
+
+.mr-item__top { display: flex; align-items: center; gap: 12rpx; }
+.mr-item__course {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+.mr-del {
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-danger);
+  background: var(--c-danger-soft);
+  padding: 8rpx 20rpx;
+  border-radius: var(--r-pill);
+}
+
+.mr-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+.mr-stars { flex-shrink: 0; display: flex; align-items: center; gap: 2rpx; }
+.mr-star { width: 26rpx; height: 26rpx; }
+.mr-time { flex-shrink: 0; font-size: var(--fs-tag); color: var(--c-faint); }
+
+.mr-item__content {
+  margin-top: 12rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  line-height: 1.6;
+}
+
+.mr-note {
+  margin-top: 12rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}

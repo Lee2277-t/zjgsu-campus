@@ -1,0 +1,13 @@
+<!-- components/ui/avatar-editor/index.wxml -->
+<view class="ui-avatar" style="width:{{size}};height:{{size}};" bindtap="onTap">
+  <!-- src 有值但加载不出来（地址过期 / 断网）时也要退回首字母，
+       否则头像位就是个空圈，用户会以为自己没设过头像 -->
+  <image show-menu-by-longpress wx:if="{{src && !srcFailed}}" class="ui-avatar__img" src="{{src}}" mode="aspectFill" binderror="onImgError" />
+  <view wx:else class="ui-avatar__ph">{{initial || '我'}}</view>
+
+  <view wx:if="{{!readonly}}" class="ui-avatar__mask">
+    <image class="ui-avatar__mask-icon" src="/assets/icons/camera--white.svg" mode="aspectFit" />
+  </view>
+
+  <view wx:if="{{uploading}}" class="ui-avatar__loading" />
+</view>

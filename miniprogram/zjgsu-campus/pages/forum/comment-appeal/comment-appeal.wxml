@@ -1,0 +1,75 @@
+<!-- pages/forum/comment-appeal —— 留言申诉。
+     进来的人通常正在生气：自己写的一句话没了，而且没人告诉他为什么。
+     所以这一页第一块就是「原文 + 谁以什么理由删的」，先把他没看到的信息补齐，
+     再谈申诉。上来就问「你有什么想说的」会让人更火。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="留言申诉" showBack />
+
+<view class="container ap">
+
+  <view wx:if="{{loading}}" class="ap-loading">读取中…</view>
+
+  <!-- 读不到 ≠ 这条留言不存在。两者必须分开说：
+       前者该让人重试，后者该给个结论 -->
+  <view wx:elif="{{error}}" class="card ap-warn">
+    <view class="ap-warn__title">打不开这条申诉</view>
+    <view class="ap-warn__sub">{{error}}</view>
+    <base-button class="ap-warn__btn" variant="ghost" block size="sm" bindtap="load">重试</base-button>
+  </view>
+
+  <block wx:else>
+    <view class="card ap-head">
+      <view class="ap-head__title">你的一条留言已被移除</view>
+      <view class="ap-head__sub">
+        <text wx:if="{{info.postTitle}}">《{{info.postTitle}}》 · </text>
+        <text>{{info.comment.removedReason || '违规'}}</text>
+        <text wx:if="{{info.comment.time}}"> · {{info.comment.time}}</text>
+      </view>
+    </view>
+
+    <!-- 原文要摆出来：这是用户唯一能核对「你们删的到底是不是我说的那句」的地方 -->
+    <view class="card ap-quote">
+      <view class="ap-quote__label">被移除的原文</view>
+      <view class="ap-quote__text">{{info.comment.content || '（纯图片留言）'}}</view>
+      <view wx:if="{{info.comment.images.length}}" class="ap-quote__imgs">
+        <image wx:for="{{info.comment.images}}" wx:key="*this" class="ap-quote__img img-fb"
+               src="{{item}}" mode="aspectFill" lazy-load />
+      </view>
+    </view>
+
+    <!-- 交过了就只显示状态，别再给一个输入框 ——
+         再交一次也进不去，只会让人以为上一次没成功 -->
+    <view wx:if="{{info.appeal}}" class="card ap-done">
+      <view class="ap-done__title">
+        {{info.appeal.status === 'accepted' ? '申诉已通过，留言已恢复' : (info.appeal.status === 'rejected' ? '申诉未通过' : '申诉已提交，等待复核')}}
+      </view>
+      <view class="ap-done__sub">{{info.appeal.reason}}</view>
+      <view class="ap-done__time">{{info.appeal.time}}</view>
+    </view>
+
+    <block wx:elif="{{info.canAppeal}}">
+      <view class="card ap-form">
+        <view class="ap-form__label">为什么觉得判错了</view>
+        <textarea class="ap-form__input" value="{{text}}" bindinput="onInput"
+                  maxlength="{{maxLen}}" auto-height
+                  placeholder="例如：这是社团招新的官方群，群里已经有一百多个人了" />
+        <view class="ap-form__foot">
+          <text class="ap-form__hint">{{text.length}}/{{maxLen}}，至少 {{minLen}} 字</text>
+        </view>
+        <base-button variant="primary" block disabled="{{!canSubmit}}"
+                     loading="{{submitting}}" bindtap="onSubmit">提交申诉</base-button>
+      </view>
+      <view class="ap-note">
+        申诉会交给老师重新看一遍，不保证恢复；恶意申诉会被记录。
+      </view>
+    </block>
+
+    <view wx:else class="card ap-closed">
+      <view class="ap-closed__title">这条留言不支持申诉</view>
+      <view class="ap-closed__sub">可能是你自己删的、已经过了 7 天，或者已经申诉过并被处理了。</view>
+    </view>
+
+    <view wx:if="{{postId}}" class="ap-back tap" bindtap="goPost">回到这条内容</view>
+  </block>
+
+</view>

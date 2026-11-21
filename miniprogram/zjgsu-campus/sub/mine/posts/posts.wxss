@@ -1,0 +1,119 @@
+/* sub/mine/posts/posts.wxss —— 我的帖子
+   复用 app.wxss：.container / .card / .truncate / .clamp2 / .pressable。
+   本页独有的全部是 mp-*（mp = my posts）。
+   配色沿用「我的」页原来那一套（板块标签蓝底、已下架琥珀底、删除红底），
+   这样这页和数字卡上那个数字看着还是同一个体系里的东西。
+   注意：.container 上不能出现 transform（会让页内 fixed 元素退化），本文件没有。 */
+
+.mp-page { padding-top: 8rpx; }
+
+/* ---------------- 顶部小结条 ---------------- */
+.mp-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 0 8rpx 16rpx;
+}
+.mp-bar__count { font-size: var(--fs-aux); color: var(--c-faint); }
+/* 有未读时把「N 条新回复」摆出来：这页的主要目的就是回答「谁回了我」 */
+.mp-bar__unread {
+  font-size: var(--fs-tag);
+  color: var(--c-danger);
+  background: var(--c-danger-soft);
+  padding: 4rpx 16rpx;
+  border-radius: var(--r-pill);
+}
+.mp-bar__clear {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--fs-aux);
+  color: var(--c-danger);
+  background: var(--c-danger-soft);
+  padding: 12rpx 24rpx;
+  border-radius: var(--r-pill);
+}
+.mp-bar__read {
+  flex-shrink: 0;
+  font-size: var(--fs-aux);
+  color: var(--c-brand);
+  background: var(--c-brand-soft);
+  padding: 12rpx 24rpx;
+  border-radius: var(--r-pill);
+}
+
+/* ---------------- 帖子卡 ---------------- */
+.mp-item { padding-bottom: 24rpx; }
+.mp-item--hover { opacity: 0.72; }
+
+.mp-item__top { display: flex; align-items: center; gap: 12rpx; }
+.mp-item__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+/* 这条帖子有几条新回复：条数比一个纯圆点有用得多 ——
+   帖子多的时候，得一眼看出是哪一条有人理我（判定见 utils/unread.js 的已读水位） */
+.mp-unread {
+  flex-shrink: 0;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 12rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-danger);
+  color: var(--c-on-strong);
+  font-size: var(--fs-micro);
+  line-height: 32rpx;
+  text-align: center;
+}
+
+.mp-board {
+  flex-shrink: 0;
+  font-size: var(--fs-micro);
+  color: var(--c-brand-deep);
+  background: var(--c-brand-soft);
+  padding: 4rpx 16rpx;
+  border-radius: var(--r-pill);
+}
+.mp-board--hidden { color: var(--c-amber); background: var(--c-amber-soft); }
+
+.mp-del {
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-danger);
+  background: var(--c-danger-soft);
+  padding: 8rpx 20rpx;
+  border-radius: var(--r-pill);
+}
+
+/* 被举报暂停展示：给一条直接能恢复的横幅，不用进去详情页再点 */
+.mp-restore {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 56rpx;
+  margin: 16rpx 0 4rpx;
+  padding: 8rpx 20rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-amber);
+  background: var(--c-amber-soft);
+  border-radius: var(--r-l);
+  box-sizing: border-box;
+}
+.mp-restore__icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+.mp-restore__text { flex: 1; min-width: 0; }
+
+.mp-item__meta {
+  margin-top: 12rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+.mp-item__content {
+  margin-top: 8rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  line-height: 1.6;
+}

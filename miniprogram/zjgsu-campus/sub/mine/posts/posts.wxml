@@ -1,0 +1,70 @@
+<!-- sub/mine/posts/posts.wxml —— 我的帖子
+     从「我的」页搬过来的独立列表页（数字卡「我的帖子」点进来）。
+     这里放的是需要动手的东西：逐条删、一键清空、被举报暂停展示后的恢复。
+     数据字段沿用 posts.js：posts（含 canDelete / hidden / unread）/ unreadTotal。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="我的帖子" showBack />
+
+<view class="container mp-page">
+  <block wx:if="{{posts.length}}">
+    <view class="mp-bar">
+      <!-- 这里是全部帖子的条数，不是已经展开的条数。
+           分页之后 posts 只是当前这一截，写 posts.length 会变成
+           「共 20 条」，而实际有 47 条、「清空」也是按 47 条删的 —— 数字自相矛盾。 -->
+      <text class="mp-bar__count">共 {{total}} 条</text>
+      <text wx:if="{{unreadTotal > 0}}" class="mp-bar__unread">{{unreadTotal}} 条新回复</text>
+      <text wx:if="{{unreadTotal > 0}}" class="mp-bar__read tap" catchtap="onReadAll">一键已读</text>
+      <text class="mp-bar__clear tap" catchtap="onClearAll">清空</text>
+    </view>
+
+    <view
+      wx:for="{{posts}}"
+      wx:key="id"
+      wx:for-item="p"
+      class="card mp-item pressable"
+      hover-class="mp-item--hover"
+      hover-stay-time="80"
+      data-id="{{p.id}}"
+      bindtap="goPost"
+    >
+      <view class="mp-item__top">
+        <text class="mp-item__title truncate">{{p.title}}</text>
+        <!-- 有新回复：几比一的差距就看这个数字（水位判定在 utils/unread.js） -->
+        <text wx:if="{{p.unread}}" class="mp-unread">{{p.unread > 99 ? '99+' : p.unread}}</text>
+        <text wx:if="{{p.hidden}}" class="mp-board mp-board--hidden">已暂停展示</text>
+        <text wx:else class="mp-board">{{p.board}}</text>
+        <view
+          wx:if="{{p.canDelete}}"
+          class="mp-del pressable"
+          data-id="{{p.id}}"
+          catchtap="onDelete"
+        >删除</view>
+      </view>
+
+      <view wx:if="{{p.hidden}}" class="mp-restore pressable" data-id="{{p.id}}" catchtap="onRestore">
+        <image class="mp-restore__icon" src="/assets/icons/clock--muted.svg" mode="aspectFit" />
+        <text class="mp-restore__text">这条因举报暂停展示了，确认没违规？点这里恢复</text>
+      </view>
+
+      <view class="mp-item__meta">
+        <text>{{p.time}}</text>
+        <text wx:if="{{p.commentCount}}"> · {{p.kind === 'topic' ? p.commentCount + ' 条信息' : p.commentCount + ' 条评论'}}</text>
+      </view>
+      <!-- 信息墙帖（kind=topic）没有正文，只发了个标题，这里不能留一行空白 -->
+      <view wx:if="{{p.content}}" class="mp-item__content clamp2">{{p.content}}</view>
+    </view>
+
+    <view wx:if="{{hasMore}}" class="load-more">上拉加载更多（还有 {{total - posts.length}} 条）</view>
+    <view wx:elif="{{done}}" class="load-more">已经到底啦，共 {{total}} 条</view>
+  </block>
+
+  <empty-state
+    wx:else
+    icon="file-text"
+    iconColor="faint"
+    title="还没有发过帖子"
+    description="论坛、课程讨论、信息墙都能发，发完这里能看谁回了你"
+    actionLabel="去发一条"
+    bind:action="goNewPost"
+  />
+</view>

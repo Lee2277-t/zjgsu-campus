@@ -1,0 +1,97 @@
+/* sub/campus/mine/mine.wxss —— 我发起的活动
+   场景色：校园绿 #19A66A / 浅底 #E9F8F1 / 深绿 #128A56 */
+
+.m-page { padding-top: 20rpx; }
+
+.m-hint {
+  padding: 120rpx 0;
+  text-align: center;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+
+/* ---------- 空状态 ---------- */
+.m-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 40rpx 40rpx;
+  text-align: center;
+}
+.m-empty__art { width: 150rpx; height: 150rpx; }
+.m-empty__title { margin-top: 24rpx; font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); }
+.m-empty__desc {
+  margin-top: 12rpx;
+  max-width: 440rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+.m-empty__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--hit);
+  margin-top: var(--sp-4);
+  padding: 0 48rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-campus);
+  color: var(--c-on-strong);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+.m-empty__cta--hover { opacity: 0.72; }
+
+/* ---------- 列表 ---------- */
+.m-item { padding: 28rpx; margin-bottom: 24rpx; }
+.m-item--hover { opacity: 0.72; }
+
+.m-item__top { display: flex; align-items: center; gap: 12rpx; margin-bottom: 16rpx; }
+.m-item__badge {
+  margin-left: auto;
+  padding: 8rpx 16rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-amber-soft);
+  color: var(--c-amber);
+  font-size: var(--fs-tag);
+}
+.m-item__title {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--c-text);
+}
+.m-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 12rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+}
+.m-item__icon { width: 26rpx; height: 26rpx; flex-shrink: 0; }
+.m-item__foot {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  font-size: var(--fs-aux);
+}
+.m-item__hint { margin-left: auto; color: var(--c-amber); }
+
+/* ---------- 底部发布 ---------- */
+.m-publish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 96rpx;
+  margin-top: 12rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-campus-soft);
+  color: var(--c-campus-deep);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+.m-publish__icon { width: 36rpx; height: 36rpx; }
+.m-publish--hover { opacity: 0.72; }

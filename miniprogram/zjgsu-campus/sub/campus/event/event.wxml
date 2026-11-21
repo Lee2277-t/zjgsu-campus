@@ -1,0 +1,160 @@
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="活动详情" showBack />
+
+<view class="container ev-page">
+
+  <view wx:if="{{notFound}}" class="empty">
+    <image class="ev-empty-art" src="/assets/icons/search--muted.svg" mode="aspectFit" />
+    <view class="empty-title">这个活动找不到了</view>
+    <view class="empty-desc">可能已经被作者删掉，或者链接过期了</view>
+  </view>
+
+  <block wx:else>
+    <view wx:if="{{loading}}" class="empty">
+      <image class="ev-empty-art" src="/assets/icons/loader--muted.svg" mode="aspectFit" />
+      <view class="empty-title">活动加载中…</view>
+    </view>
+
+    <block wx:else>
+      <!-- 被举报自动下架：这一屏只有作者自己看得到（别人打开是「找不到了」）。
+           没有这块的话，被误伤的活动只能凭空消失，作者连去哪儿恢复都不知道 -->
+      <view wx:if="{{paused}}" class="ev-paused">
+        <view class="ev-paused__title">这个活动因举报暂停展示</view>
+        <view class="ev-paused__desc">现在只有你能看到。确认没有违规的话，恢复后其他同学就能重新看到、继续报名。</view>
+        <view class="ev-paused__btn tap pressable" hover-class="ev-paused__btn--hover" hover-stay-time="80" bindtap="onRestore">
+          恢复展示
+        </view>
+      </view>
+
+      <view class="card ev-card">
+        <view class="ev__top">
+          <text class="tag {{ev.official ? 'ev__tag--official' : 'tag--campus'}}">
+            {{ev.official ? '学校官网' : '同学发起'}}
+          </text>
+          <!-- 招聘会再挂一个类型标签：来源（学校官网）和类型（这是什么活动）是两件事，
+               只写「学校官网」的话，同学得点进去才知道这是场招聘会 -->
+          <text wx:if="{{ev.type === 'jobfair'}}" class="tag tag--campus">招聘会</text>
+          <text wx:if="{{ev.isMine}}" class="ev__badge">我发布的</text>
+          <text wx:elif="{{ev.joined}}" class="ev__badge ev__badge--joined">已报名</text>
+        </view>
+
+        <view class="ev__title">{{ev.title}}</view>
+
+        <view class="ev__row">
+          <image class="ev__row-icon" src="/assets/icons/clock--muted.svg" mode="aspectFit" />
+          <text class="truncate">{{ev.start || '时间待定'}}</text>
+        </view>
+        <view wx:if="{{ev.location}}" class="ev__row">
+          <image class="ev__row-icon" src="/assets/icons/map-pin--muted.svg" mode="aspectFit" />
+          <text class="truncate">{{ev.location}}</text>
+        </view>
+        <view wx:if="{{!ev.official}}" class="ev__row">
+          <image class="ev__row-icon" src="/assets/icons/users-round--campus.svg" mode="aspectFit" />
+          <text class="truncate">{{ev.countText}}</text>
+        </view>
+        <view wx:if="{{ev.official && ev.source}}" class="ev__row">
+          <image class="ev__row-icon" src="/assets/icons/graduation-cap--muted.svg" mode="aspectFit" />
+          <text class="truncate">来源：{{ev.source}}</text>
+        </view>
+
+        <view wx:if="{{ev.desc}}" class="ev__desc">{{ev.desc}}</view>
+        <!-- 浏览人数。低于门槛整行不出现：刚发布的活动写「0 人看过」比不写更劝退 -->
+        <view wx:if="{{viewsText}}" class="ev__views">{{viewsText}}</view>
+      </view>
+
+      <!-- 官方条目（学校官网发布的活动、招聘会）没有「报名」这套：
+           发布方是学校，不经过我们这张报名表。
+           所以这块不能照搬「报名成功后可以看到联系方式」—— 那会让同学满页找报名按钮，
+           最后发现根本没有，还以为是自己漏了哪一步。改成出处说明，和底部的「复制原文链接」呼应。 -->
+      <view wx:if="{{ev.official}}" class="card ev-article">
+        <view class="ev__sec-title">官网原文</view>
+        <view wx:if="{{ev.source}}" class="muted ev-article__source">来源：{{ev.source}}</view>
+        <view wx:if="{{articleLoading}}" class="muted ev-article__state">正在读取官网正文…</view>
+        <view wx:elif="{{articleError}}" class="muted ev-article__state">{{articleError}}</view>
+        <rich-text wx:elif="{{articleNodes.length}}" class="ev-article__body" nodes="{{articleNodes}}"></rich-text>
+        <view wx:else class="muted ev-article__state">官网正文暂时无法读取，可点底部“复制原文链接”。</view>
+      </view>
+
+      <view wx:else class="card">
+        <view class="ev__sec-title">联系人</view>
+        <!-- 没报名不显示联系方式：公开号码会把发布者直接架在火上 -->
+        <view wx:if="{{contactVisible && ev.contact}}" class="ev-contact tap pressable" bindtap="onCopyContact">
+          <image class="ev-contact__icon" src="/assets/icons/user-round--brand.svg" mode="aspectFit" />
+          <text class="ev-contact__text truncate">{{ev.contact}}</text>
+          <text class="ev-contact__go">复制</text>
+        </view>
+        <view wx:elif="{{contactVisible}}" class="muted">发布者没留联系方式</view>
+        <view wx:else class="muted">报名成功后可以看到联系方式</view>
+      </view>
+
+      <!-- 收藏按钮跟底部操作条里的主动作并列：招聘会是「看到就想记下来哪天去」，
+           报名那套对它不适用（发布方是学校，不走我们这张报名表），
+           所以这里得是这一页最顺手的出口。跟校园页那处共用一份 store。 -->
+      <view wx:if="{{ev.type === 'jobfair'}}" class="card">
+        <view
+          class="ev-fav {{favorited ? 'ev-fav--on' : ''}} tap pressable"
+          hover-class="ev-fav--hover"
+          hover-stay-time="80"
+          bindtap="onFavorite"
+        >
+          <image
+            class="ev-fav__icon"
+            src="{{favorited ? '/assets/icons/star--campus.svg' : '/assets/icons/star--faint.svg'}}"
+            mode="aspectFit"
+          />
+          <text class="ev-fav__text">{{favorited ? '已收藏这场' : '收藏这场招聘会'}}</text>
+        </view>
+        <view class="ev-fav__hint">
+          收进「我的收藏」。学校官网只留最近的活动，出了那段时间列表里就不显示了 —— 但收藏里一直留着。
+        </view>
+      </view>
+
+      <view wx:if="{{ev.isMine}}" class="ev-del tap pressable" bindtap="onRemove">
+        <image class="ev-del__icon" src="/assets/icons/trash-2--danger.svg" mode="aspectFit" />
+        <text>删除这个活动</text>
+      </view>
+
+      <!-- 举报只给「同学发起的」：官网内容是学校发布的，社区自治管不到；
+           呈现也刻意做轻，它是兜底手段，不该跟「报名」「收藏」抢注意力 -->
+      <view wx:elif="{{!ev.official}}" class="ev-report tap" bindtap="onReport">举报这个活动</view>
+    </block>
+  </block>
+
+  <!-- 底部操作条：报名 / 取消报名永远是最显眼的位置。
+       固定在视口底部，所以 .container 上不能出现 transform -->
+  <view wx:if="{{!loading && !notFound && ev}}" class="ev-bar fixed-bar">
+    <view
+      wx:if="{{ev.official}}"
+      class="ev-bar__btn tap pressable"
+      bindtap="onCopySource"
+    >
+      <image class="ev-bar__icon" src="/assets/icons/book-open--campus.svg" mode="aspectFit" />
+      <text>复制原文链接</text>
+    </view>
+    <view
+      wx:elif="{{ev.isMine}}"
+      class="ev-bar__btn tap pressable"
+      bindtap="goBack"
+    >
+      <image class="ev-bar__icon" src="/assets/icons/chevron-left--campus.svg" mode="aspectFit" />
+      <text>返回</text>
+    </view>
+    <view
+      wx:elif="{{ev.joined}}"
+      class="ev-bar__btn ev-bar__btn--joined tap pressable"
+      bindtap="onCancel"
+    >
+      <image class="ev-bar__icon" src="/assets/icons/check--campus.svg" mode="aspectFit" />
+      <text>取消报名</text>
+    </view>
+    <view
+      wx:else
+      class="ev-bar__btn tap pressable"
+      bindtap="onJoin"
+    >
+      <image class="ev-bar__icon" src="/assets/icons/plus--white.svg" mode="aspectFit" />
+      <text>{{ev.fullText || '我要报名'}}</text>
+    </view>
+  </view>
+
+</view>

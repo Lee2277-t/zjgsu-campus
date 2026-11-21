@@ -1,0 +1,51 @@
+/* components/ui/base-button/index.wxss —— 胶囊 999rpx，热区 ≥88rpx */
+.ui-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  padding: 0 40rpx;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.4;
+  border: none;
+  background: transparent;
+}
+
+.ui-btn::after { border: none; }
+
+.ui-btn--sm { padding: 0 32rpx; font-size: var(--fs-sub); }
+.ui-btn--lg { padding: 0 48rpx; font-size: var(--fs-h2); min-height: 96rpx; }
+.ui-btn--block { display: flex; width: 100%; }
+
+.ui-btn--primary { background: var(--c-brand); color: var(--c-on-strong); box-shadow: var(--sh-3); }
+.ui-btn--secondary { background: var(--c-brand-soft); color: var(--c-brand-deep); border: 2rpx solid var(--c-brand-line); }
+.ui-btn--ghost { background: transparent; color: var(--c-muted); }
+.ui-btn--danger { background: var(--c-danger-soft); color: var(--c-danger); }
+.ui-btn--dark { background: #172033; color: var(--c-on-strong); }
+
+.ui-btn--hover { opacity: 0.72; }
+
+.ui-btn--disabled {
+  background: var(--c-fill) !important;
+  color: var(--c-faint) !important;
+  box-shadow: none !important;
+}
+
+/* 加载态：纯 CSS 旋转，不用浏览器 API */
+.ui-btn__spinner {
+  width: 32rpx;
+  height: 32rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.35);
+  border-top-color: var(--c-card);
+  border-radius: 50%;
+  animation: btnSpin 0.8s linear infinite;
+}
+.ui-btn--secondary .ui-btn__spinner { border-color: var(--c-brand-line); border-top-color: var(--c-brand-deep); }
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
+}

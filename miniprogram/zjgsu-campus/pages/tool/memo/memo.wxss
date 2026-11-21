@@ -1,0 +1,202 @@
+/* pages/tool/memo/memo.wxss —— 我的备忘
+   复用 app.wxss：.container / .card / .clamp2 / .pressable / .search-bar。
+   本页独有全部是 mm-*。mask / sheet 那套自绘弹层已经换成共享的
+   components/ui/bottom-sheet，这里的 mm-sheet 只写抽屉内容的排版。 */
+
+.mm-page { padding-top: 8rpx; }
+
+/* ---------- 顶部统计：青蓝 → 主色渐变 ---------- */
+.mm-top {
+  display: flex;
+  margin-bottom: 24rpx;
+  padding: var(--sp-9) 0 32rpx;
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, var(--c-profile) 0%, var(--c-brand) 100%);
+  box-shadow: 0 12rpx 32rpx rgba(43, 90, 237, 0.2);
+  color: var(--c-on-strong);
+}
+.mm-stat { flex: 1; min-width: 0; text-align: center; }
+.mm-stat__num { font-size: var(--fs-hero); font-weight: 700; line-height: 1.1; }
+/* 连续天数是这个页面唯一能让人上瘾的数字，给它一点暖色 */
+.mm-stat__num--hot { color: #ffdf85; }
+.mm-stat__label { margin-top: 12rpx; font-size: var(--fs-tag); color: rgba(255, 255, 255, 0.85); }
+
+.mm-tip {
+  margin-bottom: 24rpx;
+  padding: 20rpx 24rpx;
+  font-size: var(--fs-sub);
+  color: #7a5b12;
+  background: var(--c-amber-soft);
+  border-left: 6rpx solid var(--c-market);
+  border-radius: var(--r-l);
+  line-height: 1.6;
+}
+
+/* ---------- 空态介绍 ---------- */
+.mm-intro { padding: 40rpx 32rpx var(--sp-9); text-align: center; }
+.mm-intro__icon { width: 88rpx; height: 88rpx; }
+.mm-intro__title { margin-top: 16rpx; font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); }
+.mm-intro__sub {
+  margin-top: 12rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+.mm-intro__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin-top: 28rpx;
+  padding: 0 56rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(43, 90, 237, 0.22);
+}
+.mm-intro__btn--hover { opacity: 0.72; }
+
+/* ---------- 搜索 ---------- */
+.mm-search { margin-bottom: 4rpx; }
+.mm-search__icon { width: 34rpx; height: 34rpx; flex-shrink: 0; }
+/* input 不给定高会被默认行高拦腰截字 */
+.mm-search__input { height: 88rpx; }
+.mm-search__ph { color: var(--c-faint); }
+.mm-search__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  flex-shrink: 0;
+}
+.mm-search__clear--hover { opacity: 0.6; }
+.mm-search__clear-icon { width: 32rpx; height: 32rpx; }
+
+/* ---------- 日期分组 ---------- */
+.mm-day { display: flex; align-items: baseline; padding: 28rpx 8rpx 12rpx; }
+.mm-day__date { font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); }
+.mm-day__week { margin-left: 16rpx; font-size: var(--fs-aux); color: var(--c-faint); }
+
+/* ---------- 条目 ---------- */
+.mm-item { display: flex; align-items: center; gap: 20rpx; padding: 28rpx; margin-bottom: 20rpx; }
+.mm-item--hover { opacity: 0.72; }
+
+.mm-item__mood {
+  width: 64rpx;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: var(--fs-stat);
+  line-height: 1;
+}
+
+.mm-item__body { flex: 1; min-width: 0; }
+.mm-item__text { font-size: var(--fs-h2); color: var(--c-text); line-height: 1.6; word-break: break-all; }
+.mm-item__meta { margin-top: 12rpx; font-size: var(--fs-aux); color: var(--c-faint); }
+
+.mm-item__del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 88rpx;
+  flex-shrink: 0;
+}
+.mm-item__del--hover { opacity: 0.6; }
+.mm-item__del-icon { width: 36rpx; height: 36rpx; }
+
+/* ---------- 底部说明 ---------- */
+.mm-note {
+  margin: 16rpx 8rpx 140rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+  line-height: 1.7;
+}
+
+/* ---------- 悬浮「写一条」 ---------- */
+/* 用 mm-fab 而不是 .fab：同名会整块覆盖 app.wxss 里的 .fab */
+.mm-fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: 60rpx;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  height: 88rpx;
+  padding: 0 40rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(43, 90, 237, 0.35);
+}
+.mm-fab--hover { opacity: 0.82; }
+.mm-fab__icon { width: 32rpx; height: 32rpx; }
+
+/* ---------- 抽屉内容 ---------- */
+.mm-sheet { padding-bottom: 8rpx; }
+.mm-form-row { display: flex; align-items: center; gap: 20rpx; margin-top: 8rpx; }
+.mm-form-label { display: block; margin: 28rpx 0 16rpx; font-size: var(--fs-sub); color: var(--c-muted); }
+.mm-form-picker {
+  flex: 1;
+  min-width: 0;
+  height: 88rpx;
+  line-height: 88rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+  color: var(--c-brand);
+  font-size: var(--fs-body);
+  text-align: right;
+}
+
+.mm-moods { display: flex; justify-content: space-between; gap: 8rpx; }
+.mm-mood {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  min-height: 132rpx;
+  padding: 20rpx 0;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+}
+.mm-mood-on { background: var(--c-brand-soft); box-shadow: inset 0 0 0 2rpx var(--c-brand); }
+.mm-mood__icon { font-size: var(--fs-title); line-height: 1; }
+.mm-mood__name { font-size: var(--fs-tag); color: var(--c-muted); }
+.mm-mood-on .mm-mood__name { color: var(--c-brand-deep); }
+
+.mm-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 240rpx;
+  padding: 20rpx 24rpx;
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  color: var(--c-text);
+  background: var(--c-sunken);
+  border-radius: var(--r-l);
+}
+.mm-input__ph { color: var(--c-faint); }
+
+.mm-sheet__ops { display: flex; gap: 20rpx; margin-top: 32rpx; }
+.mm-sheet__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-sunken);
+  color: var(--c-muted);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+.mm-sheet__btn--hover { opacity: 0.72; }
+.mm-sheet__btn--primary { background: var(--c-brand); color: var(--c-on-strong); }

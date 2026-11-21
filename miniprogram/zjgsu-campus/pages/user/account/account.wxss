@@ -1,0 +1,101 @@
+/* pages/user/account —— 账号与数据。类名统一 ac-*，
+   .card / .card--flush / .row / .pressable / .muted 来自 app.wxss。
+   场景色走危险色 #DD4B55（注销是破坏性操作，用品牌蓝会显得像个普通设置项）。 */
+
+.ac { padding-bottom: 60rpx; }
+
+.ac-sec {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  margin-bottom: 16rpx;
+}
+
+.ac-desc {
+  font-size: var(--fs-sub);
+  line-height: 1.75;
+  color: var(--c-muted);
+  margin-bottom: 12rpx;
+}
+
+.ac-sub {
+  margin: 24rpx 0 12rpx;
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.ac-strong { color: var(--c-danger); font-weight: 600; }
+
+.ac-item {
+  position: relative;
+  padding-left: 28rpx;
+  font-size: var(--fs-aux);
+  line-height: 1.9;
+  color: var(--c-muted);
+}
+.ac-item::before {
+  content: '';
+  position: absolute;
+  left: 6rpx;
+  top: 20rpx;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #98a3b8;
+}
+
+.ac-note {
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+  font-size: var(--fs-aux);
+  line-height: 1.75;
+  color: var(--c-muted);
+}
+
+.ac-warn {
+  padding: 24rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-market-soft);
+  color: var(--c-market-deep);
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+}
+
+.ac-btn { margin-top: 28rpx; }
+
+/* ---------- 冷静期倒计时 ---------- */
+.ac-count {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  padding: 20rpx 0 4rpx;
+}
+.ac-count__days {
+  font-size: var(--fs-mega);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--c-danger);
+}
+.ac-count__unit {
+  margin-left: 12rpx;
+  font-size: var(--fs-body);
+  color: var(--c-muted);
+}
+.ac-count__due {
+  text-align: center;
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+  margin-bottom: 8rpx;
+}
+
+/* ---------- 底部两个入口行 ---------- */
+.ac-rows { margin-top: 24rpx; }
+.ac-row { display: flex; align-items: center; padding: 28rpx 32rpx; }
+.ac-row--hover { background: var(--c-sunken); }
+.ac-row__main { flex: 1; min-width: 0; }
+.ac-row__title { font-size: var(--fs-h2); color: var(--c-text); }
+.ac-row__desc { margin-top: 8rpx; font-size: var(--fs-aux); color: var(--c-faint); }
+.ac-row__go { width: 32rpx; height: 32rpx; flex-shrink: 0; margin-left: 12rpx; }

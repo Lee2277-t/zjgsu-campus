@@ -1,0 +1,235 @@
+<!-- pages/tool/resources/resources.wxml —— 学习资料
+     自定义导航 + app-header；搜索 / 分类 / 上传卡 / 资料列表全部走设计令牌。
+     emoji 全部换成线性 outline 图标；卡片图标按 category 从已有图标里挑。
+     数据字段沿用 resources.js：list / catMap / catFormMap / form / uploading。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="学习资料" showBack />
+
+<view class="container rs-page">
+
+  <view class="search-bar rs-search">
+    <image class="rs-search__icon" src="/assets/icons/search--muted.svg" mode="aspectFit" />
+    <input
+      class="rs-search__input"
+      placeholder="搜课程名 / 资料名"
+      placeholder-class="rs-search__ph"
+      value="{{keyword}}"
+      confirm-type="search"
+      bindinput="onSearch"
+      bindconfirm="onSearch"
+    />
+  </view>
+
+  <view class="chip-row rs-cats">
+    <view
+      wx:for="{{cats}}"
+      wx:for-item="c"
+      wx:key="*this"
+      class="chip {{catMap[c] ? 'chip-on' : ''}} tap"
+      data-c="{{c}}"
+      bindtap="onCategory"
+    >{{c}}</view>
+  </view>
+
+  <view
+    class="card rs-share pressable"
+    hover-class="rs-share--hover"
+    hover-stay-time="80"
+    bindtap="onToggleForm"
+  >
+    <view class="rs-share__ico">
+      <image class="rs-share__ico-img" src="/assets/icons/file-text--brand.svg" mode="aspectFit" />
+    </view>
+    <view class="rs-share__main">
+      <view class="rs-share__title">{{showForm ? '收起上传' : '我也有资料要分享'}}</view>
+      <view class="muted rs-share__sub">笔记、真题、讲义都行，帮同学省一次打印钱</view>
+    </view>
+    <image class="rs-share__go" src="{{showForm ? '/assets/icons/arrow-up--faint.svg' : '/assets/icons/arrow-down--faint.svg'}}" mode="aspectFit" />
+  </view>
+
+  <!-- 审核员专属：先审后发。普通用户看不到这块；通过后才进下面的公开列表。 -->
+  <view wx:if="{{isMod}}" class="card rs-review">
+    <view class="rs-review__head">
+      <view class="rs-review__title">资料审核{{pendingList.length ? ' (' + pendingList.length + ')' : ''}}</view>
+      <view class="muted rs-review__sub">先审后发 · 通过后才会出现在公开列表</view>
+    </view>
+    <view wx:if="{{pendingLoading}}" class="rs-review__empty">读取中…</view>
+    <view wx:elif="{{!pendingList.length}}" class="rs-review__empty">暂时没有待审核资料</view>
+    <view wx:for="{{pendingList}}" wx:key="id" class="rs-review__item">
+      <view class="rs-review__main">
+        <view class="rs-review__name">{{item.title}}</view>
+        <view class="muted rs-review__meta">{{item.author}} · {{item.category}}{{item.courseName ? ' · ' + item.courseName : ''}} · {{item.sizeText}}</view>
+        <view wx:if="{{item.desc}}" class="muted rs-review__desc clamp2">{{item.desc}}</view>
+      </view>
+      <view class="rs-review__ops">
+        <view class="rs-op tap" data-i="{{index}}" catchtap="onOpenPending">打开</view>
+        <view class="rs-op rs-op--primary tap" data-id="{{item.id}}" catchtap="onApproveResource">通过</view>
+        <view class="rs-op rs-op--danger tap" data-id="{{item.id}}" catchtap="onRejectResource">驳回</view>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{showForm}}" class="card rs-form">
+    <view
+      class="rs-file pressable"
+      hover-class="rs-file--hover"
+      hover-stay-time="80"
+      bindtap="chooseFile"
+    >
+      <view class="rs-file__ico">
+        <image class="rs-file__ico-img" src="/assets/icons/file-text--brand.svg" mode="aspectFit" />
+      </view>
+      <view class="rs-file__main">
+        <view wx:if="{{queue.length}}" class="rs-file__name truncate">已选 {{queue.length}} 个文件</view>
+        <view wx:else class="rs-file__name">从聊天记录里选文件（可多选）</view>
+        <view class="muted rs-file__sub">{{uploading ? '上传中 ' + uploadPercent + '%' : '单个 20MB 以内，一次最多 9 个'}}</view>
+      </view>
+      <image class="rs-file__go" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <!-- 待发队列：标题默认就是文件名，学生通常不用改。
+         一份一行而不是共用一个标题框 —— 五个文件共用一个名字是没有意义的 -->
+    <block wx:if="{{queue.length}}">
+      <view class="rs-qhead">待发布 {{queue.length}} 份 · 名字已按文件名填好，可改</view>
+      <view
+        wx:for="{{queue}}"
+        wx:key="fileID"
+        class="rs-qitem"
+      >
+        <image class="rs-qitem__ico" src="/assets/icons/file-text--brand.svg" mode="aspectFit" />
+        <input
+          class="rs-qitem__input"
+          value="{{item.title}}"
+          data-i="{{index}}"
+          bindinput="onQueueInput"
+          placeholder="给这份资料起个名字"
+          maxlength="40"
+        />
+        <view class="rs-qitem__del tap" data-i="{{index}}" catchtap="onQueueRemove">
+          <image class="rs-qitem__x" src="/assets/icons/x--muted.svg" mode="aspectFit" />
+        </view>
+      </view>
+    </block>
+
+    <input
+      class="rs-field"
+      placeholder="对应课程名（选填）"
+      value="{{form.courseName}}"
+      data-k="courseName"
+      bindinput="onInput"
+      maxlength="30"
+    />
+    <input
+      class="rs-field"
+      placeholder="选填，如「含近三年真题」"
+      value="{{form.desc}}"
+      data-k="desc"
+      bindinput="onInput"
+      maxlength="200"
+    />
+    <view class="chip-row rs-types">
+      <view
+        wx:for="{{['笔记','真题','讲义','其他']}}"
+        wx:for-item="t"
+        wx:key="*this"
+        class="chip {{catFormMap[t] ? 'chip-on' : ''}} tap"
+        data-c="{{t}}"
+        bindtap="onFormCategory"
+      >{{t}}</view>
+    </view>
+    <view class="muted rs-form__note">提交后需审核，通过后其他同学才能看到。</view>
+    <button class="btn-primary tap rs-submit" hover-stay-time="80" bindtap="onSubmit" disabled="{{uploading || queue.length === 0}}">{{queue.length > 1 ? '发布这 ' + queue.length + ' 份资料' : '发布资料'}}</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="rs-loading">加载中…</view>
+
+  <empty-state
+    wx:elif="{{list.length === 0}}"
+    icon="book-open"
+    iconColor="faint"
+    title="还没有人分享资料"
+    description="你手里的笔记或真题，可能正是别人在找的"
+  />
+
+  <block wx:else>
+    <view
+      wx:for="{{list}}"
+      wx:key="id"
+      class="card rs-item"
+    >
+      <view class="rs-head">
+        <view class="rs-head__ico">
+          <image
+            class="rs-head__ico-img"
+            src="{{item.category === '笔记' ? '/assets/icons/notebook-pen--brand.svg' : (item.category === '真题' ? '/assets/icons/file-text--market.svg' : (item.category === '讲义' ? '/assets/icons/book-open--campus.svg' : '/assets/icons/tag--muted.svg'))}}"
+            mode="aspectFit"
+          ></image>
+        </view>
+        <view class="rs-main">
+          <view class="rs-title">{{item.title}}</view>
+          <view wx:if="{{item.statusText}}" class="tag {{item.status === 'rejected' ? 'tag--danger' : 'tag--campus'}} rs-status">{{item.statusText}}</view>
+          <view class="muted rs-meta">{{item.courseName ? item.courseName + ' · ' : ''}}{{item.ext}} · {{item.sizeText}}</view>
+          <view wx:if="{{item.desc}}" class="muted rs-desc clamp2">{{item.desc}}</view>
+          <view wx:if="{{item.reviewReason}}" class="muted rs-desc">未通过原因：{{item.reviewReason}}</view>
+        </view>
+      </view>
+
+      <view class="rs-foot">
+        <text class="faint rs-by truncate">{{item.author}} · {{item.time}}</text>
+        <view class="rs-ops">
+          <view
+            wx:if="{{!item.statusText}}"
+            class="rs-op {{item.thanked ? 'rs-op--on' : ''}} pressable"
+            hover-class="rs-op--hover"
+            hover-stay-time="80"
+            data-i="{{index}}"
+            catchtap="onThanks"
+          >
+            <image
+              class="rs-op__icon"
+              src="{{item.thanked ? '/assets/icons/thumbs-up--campus.svg' : '/assets/icons/thumbs-up--muted.svg'}}"
+              mode="aspectFit"
+            ></image>
+            <text>{{item.thanked ? '已感谢' : (item.thanksCount > 0 ? item.thanksCount : '感谢')}}</text>
+          </view>
+          <view
+            class="rs-op rs-op--primary pressable"
+            hover-class="rs-op--hover"
+            hover-stay-time="80"
+            data-i="{{index}}"
+            catchtap="onOpen"
+          >
+            <image class="rs-op__icon" src="/assets/icons/eye--brand.svg" mode="aspectFit" />
+            <text>打开</text>
+          </view>
+          <view
+            wx:if="{{item.isMine}}"
+            class="rs-op rs-op--danger pressable"
+            hover-class="rs-op--hover"
+            hover-stay-time="80"
+            data-id="{{item.id}}"
+            catchtap="onRemove"
+          >
+            <image class="rs-op__icon" src="/assets/icons/trash-2--danger.svg" mode="aspectFit" />
+            <text>删除</text>
+          </view>
+          <view
+            wx:else
+            class="rs-op rs-op--danger pressable"
+            hover-class="rs-op--hover"
+            hover-stay-time="80"
+            data-i="{{index}}"
+            catchtap="onReport"
+          >
+            <image class="rs-op__icon" src="/assets/icons/shield--danger.svg" mode="aspectFit" />
+            <text>举报</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 上拉加载。到底时把总数说出来 —— 只写「已经到底啦」的话，
+         同学刚筛完「真题」看到 3 条，会以为这就是全部资料。 -->
+    <view wx:if="{{hasMore}}" class="load-more">上拉加载更多（还有 {{total - list.length}} 份）</view>
+    <view wx:elif="{{done}}" class="load-more">已经到底啦，共 {{total}} 份</view>
+  </block>
+</view>

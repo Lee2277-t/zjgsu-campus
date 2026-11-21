@@ -1,0 +1,234 @@
+<!-- pages/user/friends —— 我的同学（同学 / 申请 / 找同学 / 黑名单）
+     页签用 app.wxss 的分段控件，搜索图标换成线性 outline 图标（不再用 emoji）。
+     云函数参数、分页（reloadAll）、storage key 全部沿用，只是换了呈现。
+     加好友 / 解除好友两个动作的交互在 utils/friend.js（三个落点共用一份实现）；
+     本页只是它们的一个落点，不承担「好友管理」的专属入口。
+
+     「申请」页签里同时放「收到的」和「我发出的」两个方向：说的是同一件事
+     （一段还没成立的申请），而「我申请了他、他一直没理我」正是最需要一个出口
+     （撤销）的那一半 —— 分成两个页签时，用户经常只看到其中一个方向。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="我的同学" showBack />
+
+<view class="container fr">
+  <view class="segmented fr-tabs">
+    <view class="segmented-item {{tab === 'friends' ? 'segmented-item-on' : ''}} tap"
+          data-tab="friends" bindtap="onTab">同学 {{friends.length}}</view>
+    <view class="segmented-item {{tab === 'requests' ? 'segmented-item-on' : ''}} tap"
+          data-tab="requests" bindtap="onTab">申请 {{requests.length + outgoing.length}}</view>
+    <view class="segmented-item {{tab === 'search' ? 'segmented-item-on' : ''}} tap"
+          data-tab="search" bindtap="onTab">找同学</view>
+    <view class="segmented-item {{tab === 'blocked' ? 'segmented-item-on' : ''}} tap"
+          data-tab="blocked" bindtap="onTab">黑名单 {{blocks.length}}</view>
+  </view>
+
+  <!-- 我的同学 -->
+  <block wx:if="{{tab === 'friends'}}">
+    <view wx:if="{{offline}}" class="fr-offline">
+      <image class="fr-offline__icon" src="/assets/icons/life-buoy--faint.svg" mode="aspectFit" />
+      <text>云端暂时读不到（列表可能不全）。下拉可以再试一次。</text>
+    </view>
+
+    <!-- 好友多了以后一屏屏翻着找人太折磨，直接在本地这份名单里筛。
+         不联网：好友量级是几十上百，内存里过一遍是零成本，断网也能用 -->
+    <view wx:if="{{friends.length > 0}}" class="search-bar fr-search">
+      <image class="fr-search-icon" src="/assets/icons/search--muted.svg" mode="aspectFit" />
+      <input class="fr-search-input" placeholder="搜好友：昵称 / 学院 / 签名 / 联系方式"
+             value="{{friendKeyword}}" bindinput="onFriendKeyword" confirm-type="search" />
+      <view wx:if="{{friendKeyword}}" class="fr-do tap" bindtap="clearFriendKeyword">清空</view>
+    </view>
+    <view wx:if="{{friendKeyword}}" class="fr-tip fr-tip--top">
+      <!-- 命中的总条数用 friendTotal，不能用 friendView.length：
+           分页之后 friendView 只是已经展开的那一截，写成后者的话，
+           刚搜出来是「找到 12 位」，往下划两屏就变成「找到 40 位」——
+           同一句提示自己前后矛盾，看着像搜索结果在变。 -->
+      在 {{friends.length}} 位同学里找到 {{friendTotal}} 位
+    </view>
+
+    <empty-state wx:if="{{friends.length === 0}}" icon="users" iconColor="faint"
+      title="还没有同学好友" description="去「找同学」按昵称或学院搜一下吧" />
+    <empty-state wx:elif="{{friendKeyword && friendView.length === 0}}" icon="search" iconColor="faint"
+      title="好友里没有这个人" description="换个关键词试试，或者去「找同学」全站搜一下" />
+
+    <view class="card fr-person tap" wx:for="{{friendView}}" wx:key="openid"
+          data-openid="{{item.openid}}" data-name="{{item.nickName}}" data-alias="{{item.alias}}"
+          bindtap="goCard" catchlongpress="onLongPressFriend">
+      <view class="fr-avatar">
+        <image
+          wx:if="{{item.avatarUrl && !item.avaErr}}"
+          class="fr-avatar-img"
+          src="{{item.avatarUrl}}"
+          mode="aspectFill"
+          data-openid="{{item.openid}}"
+          binderror="onFriendAvatarError"
+        />
+        <text wx:else>{{item.avatarText}}</text>
+      </view>
+      <view class="fr-info">
+        <view class="fr-name truncate">{{item.nickName}}<text wx:if="{{item.college}}" class="fr-college"> · {{item.college}}</text></view>
+        <!-- 备注名单独标一行：名单里的名字已经被备注覆盖了（见 listFriends），
+             不把原名还回来的话，用户会以为对方改名了 -->
+        <view wx:if="{{item.alias}}" class="fr-alias truncate">原名：{{item.originalName}}</view>
+        <view wx:if="{{item.contactValue}}" class="fr-contact truncate">{{item.contactText}}：{{item.contactValue}}</view>
+        <view wx:else class="muted truncate">还没填联系方式</view>
+      </view>
+      <!-- 「已拉黑」标记：拉黑和「是不是同学」是两件独立的事，
+           不标的话用户会以为「是同学」就等于「能互相看到联系方式」 -->
+      <text wx:if="{{item.blocked}}" class="fr-tag fr-tag--warn">已拉黑</text>
+      <!-- 解除好友就长在名单行上（和黑名单页签的「解除」同一个位置），不另开管理页。
+           catchtap：不 catch 的话点这一下会顺带跳进名片页，确认框会被压在后面 -->
+      <view class="fr-act fr-act--danger tap" data-openid="{{item.openid}}"
+            data-name="{{item.nickName}}" catchtap="onRemoveFriend">解除</view>
+      <image class="fr-arrow" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+
+    <!-- 上拉加载。friendDone 由分页器给出：只有真的分过页才显示「已经到底啦」，
+         好友就 8 个人时不该多这一行占地方 -->
+    <view wx:if="{{friendHasMore}}" class="load-more">上拉加载更多（还有 {{friendTotal - friendView.length}} 位）</view>
+    <view wx:elif="{{friendDone}}" class="load-more">已经到底啦，共 {{friendTotal}} 位</view>
+
+    <view wx:if="{{friendView.length}}" class="fr-tip">长按同学可以设备注名，或解除好友。</view>
+    <base-button class="fr-more" variant="ghost" block size="sm" bindtap="onEditProfile">管理我的联系方式</base-button>
+  </block>
+
+  <!-- 申请：收到的 + 我发出的，两个方向放在一起 -->
+  <block wx:if="{{tab === 'requests'}}">
+    <view class="fr-sync">
+      <image class="fr-sync__icon" src="/assets/icons/refresh--faint.svg" mode="aspectFit" />
+      <text>{{refreshing ? '正在刷新…' : (updatedAt ? '已更新 ' + updatedAt + ' · 每 6 秒自动看一次' : '每 6 秒自动看一次新请求')}}</text>
+    </view>
+
+    <view class="fr-sec">收到 {{requests.length}} 条申请</view>
+    <view wx:if="{{requests.length === 0}}" class="fr-none">暂时没有新申请。别人想认识你的时候会出现在这里。</view>
+    <view class="card fr-req" wx:for="{{requests}}" wx:key="id">
+      <view class="fr-person">
+        <view class="fr-avatar">
+        <image
+          wx:if="{{item.avatarUrl && !item.avaErr}}"
+          class="fr-avatar-img"
+          src="{{item.avatarUrl}}"
+          mode="aspectFill"
+          data-openid="{{item.openid}}"
+          binderror="onFriendAvatarError"
+        />
+        <text wx:else>{{item.avatarText}}</text>
+      </view>
+        <view class="fr-info">
+          <view class="fr-name truncate">{{item.nickName}}<text wx:if="{{item.college}}" class="fr-college"> · {{item.college}}</text></view>
+          <view wx:if="{{item.message}}" class="fr-contact truncate">「{{item.message}}」</view>
+          <view class="muted">{{item.time}}</view>
+        </view>
+      </view>
+      <view class="fr-ops">
+        <base-button class="fr-op" variant="primary" size="sm" data-id="{{item.id}}" bindtap="onAccept">通过</base-button>
+        <base-button class="fr-op" variant="ghost" size="sm" data-id="{{item.id}}" bindtap="onReject">忽略</base-button>
+      </view>
+    </view>
+    <view wx:if="{{requests.length > 0}}" class="fr-tip">
+      <image class="fr-tip-icon" src="/assets/icons/clock--muted.svg" mode="aspectFit" />
+      <text>对方通过之后，你就能在「同学」里看到 TA 的联系方式。</text>
+    </view>
+
+    <!-- 我发出的申请：原先 listOutgoing 一直在拉，但一个字都没渲染 ——
+         用户发完申请就再也看不到它，更没有任何撤销的余地 -->
+    <view class="fr-sec fr-sec--gap">我发出 {{outgoing.length}} 条申请</view>
+    <view wx:if="{{outgoing.length === 0}}" class="fr-none">你还没有发出过申请。在「找同学」里搜到人就能加。</view>
+    <view class="card fr-req" wx:for="{{outgoing}}" wx:key="id">
+      <view class="fr-person tap" data-openid="{{item.toOpenid}}" bindtap="goCard">
+        <view class="fr-avatar">
+        <image
+          wx:if="{{item.avatarUrl && !item.avaErr}}"
+          class="fr-avatar-img"
+          src="{{item.avatarUrl}}"
+          mode="aspectFill"
+          data-openid="{{item.openid}}"
+          binderror="onFriendAvatarError"
+        />
+        <text wx:else>{{item.avatarText}}</text>
+      </view>
+        <view class="fr-info">
+          <view class="fr-name truncate">{{item.nickName}}<text wx:if="{{item.college}}" class="fr-college"> · {{item.college}}</text></view>
+          <view wx:if="{{item.message}}" class="fr-contact truncate">「{{item.message}}」</view>
+          <view class="muted truncate">{{item.time}} · 等对方通过</view>
+        </view>
+      </view>
+      <!-- 撤销是这一块存在的全部理由：申请发出去之后界面只剩「等对方回应」，
+           发错人了、想换句话重发都只能干等。撤销会连 24 小时冷却一起清掉，
+           所以撤完可以立刻重新申请 -->
+      <view class="fr-ops">
+        <base-button class="fr-op" variant="ghost" size="sm"
+          data-id="{{item.id}}" data-openid="{{item.toOpenid}}" data-name="{{item.nickName}}"
+          bindtap="onCancelRequest">撤销申请</base-button>
+      </view>
+    </view>
+    <view wx:if="{{outgoing.length > 0}}" class="fr-tip">
+      <text>撤销之后可以立刻重新申请（24 小时的冷却会一起清掉）。</text>
+    </view>
+  </block>
+
+  <!-- 找同学 -->
+  <block wx:if="{{tab === 'search'}}">
+    <view class="search-bar fr-search">
+      <image class="fr-search-icon" src="/assets/icons/search--muted.svg" mode="aspectFit" />
+      <input class="fr-search-input" placeholder="输入昵称或学院名" value="{{keyword}}"
+             bindinput="onKeyword" bindconfirm="doSearch" />
+      <view class="fr-do tap" bindtap="doSearch">搜索</view>
+    </view>
+
+    <view wx:if="{{keyword}}" class="chip-row fr-modes no-scrollbar">
+      <view class="chip tap {{searchMode === 'exact' ? 'chip-on' : ''}}" data-m="exact" bindtap="onSearchMode">精准</view>
+      <view class="chip tap {{searchMode === 'fuzzy' ? 'chip-on' : ''}}" data-m="fuzzy" bindtap="onSearchMode">模糊</view>
+    </view>
+
+    <empty-state wx:if="{{keyword && results.length === 0 && !searching}}" icon="search" iconColor="faint"
+      title="没找到这位同学" description="换个昵称、学院名，或者切到「模糊」再试一次" />
+    <view wx:elif="{{results.length > 0}}" class="fr-tip fr-tip--top">找到 {{results.length}} 位同学</view>
+
+    <!-- 「加好友」直接给在这一行上：搜到人正是想加好友的那一刻，
+         让用户先点进名片再点一次按钮，正是「找不到加好友在哪」的来源。
+         已经是同学 / 已经申请过的行改成状态文字，不给按钮 ——
+         给了只会点出一个「你们已经是好友啦」的提示 -->
+    <view class="card fr-person tap" wx:for="{{results}}" wx:key="openid"
+          data-openid="{{item.openid}}" bindtap="goCard">
+      <view class="fr-avatar">
+        <image
+          wx:if="{{item.avatarUrl && !item.avaErr}}"
+          class="fr-avatar-img"
+          src="{{item.avatarUrl}}"
+          mode="aspectFill"
+          data-openid="{{item.openid}}"
+          binderror="onFriendAvatarError"
+        />
+        <text wx:else>{{item.avatarText}}</text>
+      </view>
+      <view class="fr-info">
+        <view class="fr-name truncate">{{item.nickName}}<text wx:if="{{item.college}}" class="fr-college"> · {{item.college}}</text></view>
+        <view wx:if="{{item.motto}}" class="muted truncate">{{item.motto}}</view>
+        <view wx:else class="muted truncate">点击查看名片</view>
+      </view>
+      <view wx:if="{{!item.isFriend && !item.requested}}" class="fr-act fr-act--primary tap"
+            data-openid="{{item.openid}}" catchtap="onAddFriend">加好友</view>
+      <text wx:elif="{{item.isFriend}}" class="fr-state">已是同学</text>
+      <text wx:else class="fr-state">已申请</text>
+      <image class="fr-arrow" src="/assets/icons/chevron-right--faint.svg" mode="aspectFit" />
+    </view>
+  </block>
+
+  <!-- 黑名单 -->
+  <block wx:if="{{tab === 'blocked'}}">
+    <empty-state wx:if="{{blocks.length === 0}}" icon="shield-check" iconColor="faint"
+      title="黑名单是空的" description="遇到想静一静的人，去他的名片点「拉黑 TA」" />
+    <view class="card fr-person" wx:for="{{blocks}}" wx:key="openid">
+      <view class="fr-avatar fr-avatar--blocked">{{item.avatarText}}</view>
+      <view class="fr-info">
+        <view class="fr-name truncate">{{item.nickName}}<text wx:if="{{item.college}}" class="fr-college"> · {{item.college}}</text></view>
+        <view class="muted truncate">已拉黑，TA 无法给你发消息</view>
+      </view>
+      <!-- 「也是同学」：解除拉黑和解除好友是两个不同的动作，
+           不标的话用户会在黑名单里解除拉黑，然后奇怪「怎么他还能看到我的联系方式」——
+           其实两人本来就是同学，只是被拉黑了 -->
+      <text wx:if="{{item.isFriend}}" class="fr-tag">也是同学</text>
+      <base-button class="fr-op" variant="ghost" size="sm" data-openid="{{item.openid}}" catchtap="onUnblock">解除</base-button>
+    </view>
+  </block>
+</view>

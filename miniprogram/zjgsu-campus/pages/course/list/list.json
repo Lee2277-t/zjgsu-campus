@@ -1,0 +1,10 @@
+{
+  "enablePullDownRefresh": true,
+  "navigationBarTitleText": "课程评价",
+  "usingComponents": {
+    "course-card": "/components/course/course-card/index",
+    "sticky-filter": "/components/ui/sticky-filter/index",
+    "privacy-modal": "/components/ui/privacy-modal/index",
+    "bottom-sheet": "/components/ui/bottom-sheet/index"
+  }
+}

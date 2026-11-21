@@ -1,0 +1,442 @@
+// sub/course/review/review.js
+// 一条评价可能来自「写新评价」，也可能来自「改我以前写的那条」。
+// 两种模式共用同一个页面：带 reviewId 进入即编辑模式，加载原内容并允许改匿名设置。
+const store = require('../../../utils/store.js');
+const moderation = require('../../../utils/moderation.js');
+const userApi = require('../../../utils/user.js');
+// 全站同一套精准 / 模糊搜索
+const searchCore = require('../../../utils/search.js');
+// openid 预热：进页面就开始取身份，和用户打字并行，
+// 提交时才不会在 addReview 里干等 5 秒兜底（等待越久，双击竞态窗口越大）
+const cloud = require('../../../utils/cloud.js');
+
+// 老师模式专属标签：课程那些「作业多 / 考试难」放在人身上不通，
+// 评价老师要看的是讲课、态度、给分、答疑这些
+const TEACHER_TAGS = ['讲课清楚', '照本宣科', '给分好', '给分严', '点名勤', '不点名',
+  '作业多', '答疑耐心', '考前划重点', '要求严格', '好说话', '有口音'];
+
+Page({
+  data: {
+    id: '',
+    // 自定义导航条（app-header）的标题；下面 onLoad 里复用了原本给原生导航条算的那串文案
+    navTitle: '写评价',
+    course: null,
+    score: 5,
+    content: '',
+    anonymous: true, // 评课场景下默认匿名：这是让人敢开口的前提
+    tags: [],
+    tagsMap: {},
+    presetTags: [],
+    universalTags: [],
+    editingId: '',
+    isEdit: false,
+    submitting: false,
+    myNick: '',
+    // 这次是恢复哪条草稿来的：发成功之后要把它从草稿箱撤掉
+    draftId: '',
+    courseName: '',
+    // 任课老师：填了这条评价才会出现在「老师评价」里
+    teacher: '',
+    teacherOptions: [],
+    teacherVerified: false,
+    // 给老师的分，和上面给课程的分是两档；0 表示这次没单独给老师打分
+    teacherScore: 0,
+    // 当前在给哪个打分：'course' | 'teacher'。两档分共用一块星条，
+    // 靠这个开关切换，同学一眼就知道自己现在点的是哪个分
+    scale: 'course',
+    // 老师模式：不挂任何课程，只评价某一位老师（课程列表页「给老师单独写评价」进来）。
+    // 这条评价落库时 courseId 为空，全站老师口碑表照样能统计到它
+    teacherOnly: false
+  },
+
+  onLoad(options) {
+    // 身份预热（异步并行，不挡表单）：云函数写库用的是服务端身份，
+    // 这里提前取只为本地「我的评价」马上认领 + 缩短提交链路
+    cloud.fetchOpenid().catch(() => {});
+    const course = store.getCourseById(options.id);
+    // 老师模式的判定：显式 mode=teacher，或「没有课程 id 但带了老师名」。
+    // 注意不能只看 teacher —— 课程详情页带 teacher 进来是课程评价，不是老师评价
+    const teacherOnly = !!options.mode && options.mode === 'teacher'
+      ? true
+      : (!options.id && !!options.teacher);
+    const preset = teacherOnly
+      ? TEACHER_TAGS
+      : (course ? (Array.isArray(course.tags) ? course.tags : []) : []);
+    // 课程自带的标签 + 通用标签：前者是这门课的分身标签，后者是跨课可比的维度
+    const base = teacherOnly ? [] : ['给分好', '作业多', '考试难', '干货多', '要背的', '小组作业', '点名勤', '老师很棒', '别翘课', '实用']
+      .filter((t) => preset.indexOf(t) < 0);
+    const teacher = options.teacher ? decodeURIComponent(options.teacher) : ((course && course.teacher) || '');
+
+    this.setData({
+      id: options.id || '',
+      teacherOnly: teacherOnly,
+      // 一行：同一个标题串同时喂给 app-header（原生导航条在 custom 模式下不显示）。
+      // 老师模式下没有课程名，标题不能写成「评价《》」那种空壳
+      navTitle: options.reviewId
+        ? '修改评价'
+        : (teacherOnly ? (teacher ? '评价老师 · ' + teacher : '写老师评价') : '评价《' + (course ? course.name : '') + '》'),
+      course,
+      courseName: course ? course.name : '',
+      // 老师名三个来源：URL 里带过来的 > 课程自带的任课老师 > 空。
+      // 从「写对某位老师的评价」进来时，名字已经填好，下面直接就是老师打分条
+      teacher: teacher,
+      presetTags: preset,
+      universalTags: base,
+      editingId: options.reviewId || '',
+      myNick: userApi.getMyProfile().nickName || '浙小商',
+      // 老师模式只有一档分，直接停在老师那档，不用再让人切
+      scale: teacherOnly ? 'teacher' : 'course'
+    });
+
+    if (options.reviewId) {
+      this.loadEditing(options.reviewId);
+    } else if (options.draftId) {
+      // 从草稿箱进来：把没写完的那篇填回表单，并记住是哪一条，发成功好撤掉
+      const d = store.getDraft(options.draftId);
+      if (d) {
+        this.setData({ draftId: options.draftId });
+        const tags = Array.isArray(d.tags) ? d.tags : [];
+        const tagsMap = {};
+        tags.forEach((t) => { tagsMap[t] = true; });
+        this.setData({
+          score: Number(d.score) || 5,
+          content: d.content || '',
+          tags: tags,
+          tagsMap: tagsMap,
+          // 课程 id 一起恢复，否则这条评价会挂到错误的课程下
+          courseId: d.courseId || this.data.id
+        });
+      }
+    } else if (this.data.teacher) {
+      // 预填的老师名去名录核一次：命中就打上「✓ 官方名录」的勾
+      userApi.teacherList(this.data.teacher, '')
+        .then((list) => {
+          if (list.some((t) => t.name === this.data.teacher)) {
+            this.setData({ teacherVerified: true });
+          }
+        })
+        .catch(() => {});
+    } else {
+      // 自动接上同一门课没写完的评价：只认同课程的那篇，
+      // 别的课的草稿不掺和，免得把 A 课的评价内容填到 B 课头上
+      const last = store.getDrafts().find((x) => x.type === 'review' && x.courseId === options.id);
+      if (last) {
+        const tags = Array.isArray(last.tags) ? last.tags : [];
+        const tagsMap = {};
+        tags.forEach((t) => { tagsMap[t] = true; });
+        this.setData({
+          draftId: last.id,
+          score: Number(last.score) || 5,
+          content: last.content || '',
+          tags: tags,
+          tagsMap: tagsMap,
+          teacher: last.teacher || ''
+        });
+        wx.showToast({ title: '已接上上次没写完的', icon: 'none', duration: 2000 });
+      }
+    }
+    wx.setNavigationBarTitle({ title: this.data.navTitle });
+  },
+
+  // 评分页也留草稿退路：写到一半被消息打断，回来还在
+  onSaveDraft() {
+    const d = this.data;
+    if (!store.hasDraftText({ title: '', content: d.content })) {
+      wx.showToast({ title: '还没写内容', icon: 'none' });
+      return;
+    }
+    store.saveDraft({
+      type: 'review',
+      courseId: this.data.id,
+      courseName: this.data.courseName || '',
+      content: d.content,
+      tags: d.tags,
+      score: d.score,
+      teacher: this.data.teacher || '',
+      teacherScore: this.data.teacher ? (this.data.teacherScore || 0) : 0
+    });
+    wx.showToast({ title: '草稿已存，在「我的 → 草稿箱」', icon: 'none', duration: 2500 });
+  },
+
+  // 页面离开时自动存草稿（写一半退出去，回来接着写）：
+  // 编辑模式下改的是已发布的评价，不归草稿管，跳过
+  autoSaveDraft() {
+    if (this._published || this.data.isEdit) return;
+    const d = this.data;
+    if (!store.hasDraftText({ title: '', content: d.content })) {
+      if (d.draftId) store.removeDraft(d.draftId);
+      return;
+    }
+    const saved = store.saveDraft({
+      type: 'review',
+      courseId: d.id,
+      courseName: d.courseName || '',
+      content: d.content,
+      tags: d.tags,
+      score: d.score,
+      anonymous: d.anonymous,
+      teacher: d.teacher || '',
+      teacherScore: d.teacher ? (d.teacherScore || 0) : 0
+    });
+    if (saved && saved.id && saved.id !== d.draftId) this.setData({ draftId: saved.id });
+  },
+
+  onHide() { this.autoSaveDraft(); },
+  onUnload() { this.autoSaveDraft(); },
+
+  // 同发帖页：遮罩卡住会自动收掉，避免按钮点不动却看不出原因
+  onShow() {
+    if (this.data.submitting) {
+      this.setData({ submitting: false });
+      wx.hideLoading();
+      wx.showToast({ title: '上一条没发完，已复位，可以再试', icon: 'none' });
+    }
+  },
+
+  // 编辑模式：把原来那条填进表单，同时带上原来的匿名设置
+  loadEditing(reviewId) {
+    const mine = store.getMyReviews();
+    const old = mine.find((r) => r.id === reviewId);
+    if (!old) {
+      wx.showToast({ title: '找不到这条评价', icon: 'none' });
+      return;
+    }
+    this.setData({
+      isEdit: true,
+      score: Number(old.score) || 5,
+      content: old.content || '',
+      anonymous: !!old.anonymous,
+      tags: old.tags || [],
+      teacher: old.teacher || '',
+      teacherVerified: !!old.teacherVerified,
+      // 编辑老评价时，老师分只在还留着老师的前提下恢复
+      teacherScore: old.teacher ? (Number(old.teacherScore) || 0) : 0,
+      tagsMap: (() => { const m = {}; (old.tags || []).forEach((x) => { m[x] = true; }); return m; })()
+    });
+  },
+
+  /* ---------------- 任课老师 ---------------- */
+
+  // 官方名录要想办法用上：同学打字时给一串真实存在的老师名，
+  // 比让他自己瞎填靠谱得多，填完还会在课程页显示「✓ 官方名录」。
+  onTeacherInput(e) {
+    const kw = String(e.detail.value || '').trim();
+    // 老师名被清空时，刚才那个老师的分也要跟着作废，
+    // 否则会出现「没填老师却带了一个老师分」的脏评价
+    this.setData({
+      teacher: kw,
+      teacherVerified: false,
+      teacherScore: kw ? this.data.teacherScore : 0
+    });
+    if (this._tTimer) clearTimeout(this._tTimer);
+    if (kw.length < 1) {
+      this.setData({ teacherOptions: [] });
+      return;
+    }
+    this._tTimer = setTimeout(() => this.matchTeacher(kw), 250);
+  },
+
+  async matchTeacher(kw) {
+    let list = await userApi.teacherList(kw, '');
+    // 名录是按学院抓下来的，同学搜「王」常常只搜到自己学院那批，
+    // 再拿本地评价里出现过的老师名补一层，避免补全列表空空如也
+    const extra = store.getCourseTeachers(this.data.id).map((t) => ({ name: t.name, college: '' }));
+    const seen = {};
+    // 同一套精准 / 模糊：老师名打错一个字，也该在补全里找得到人，
+    // 找不到就只能自己瞎填一个，后面「✓ 官方名录」的VERIFIED标记也就没了
+    const merged = list.concat(extra).filter((t) => {
+      if (seen[t.name]) return false;
+      seen[t.name] = true;
+      return searchCore.matchFields([t.name, t.college], kw) >= 0;
+    });
+    this.setData({
+      teacherOptions: merged.slice(0, 10),
+      teacherVerified: !!list.filter((t) => t.name === this.data.teacher.trim())[0]
+    });
+  },
+
+  pickTeacher(e) {
+    const name = e.currentTarget.dataset.name;
+    const inList = this.data.teacherOptions.some((t) => t.name === name);
+    // 换人了就把老师分归零：上一个人的分不能跟着算到新老师头上
+    this.setData({ teacher: name, teacherOptions: [], teacherVerified: inList, teacherScore: 0 });
+  },
+
+  // 名录里没有的同学可以自己加一条，加完别人也能选到
+  async onAddTeacher() {
+    const name = String(this.data.teacher || '').trim();
+    if (!name) {
+      wx.showToast({ title: '先填个老师名', icon: 'none' });
+      return;
+    }
+    if (!/^[一-龥·]{2,6}$/.test(name)) {
+      wx.showToast({ title: '填个中文名，2-6 个字', icon: 'none' });
+      return;
+    }
+    wx.showLoading({ title: '查一下名录', mask: true });
+    const r = await userApi.teacherAdd(name, this.data.course ? (this.data.course.college || '') : '');
+    wx.hideLoading();
+    if (!r || r.ok === false) {
+      wx.showToast({ title: (r && r.msg) || '添加失败', icon: 'none' });
+      return;
+    }
+    this.setData({ teacherVerified: true });
+    wx.showToast({ title: '已加入名录', icon: 'success' });
+  },
+
+  selectScore(e) {
+    this.setData({ score: Number(e.currentTarget.dataset.s) });
+  },
+
+  // 老师打分：只有填了老师名才会显示这一条
+  selectTeacherScore(e) {
+    this.setData({ teacherScore: Number(e.currentTarget.dataset.s) });
+  },
+
+  // 两档分之间切换。点一下已经选中的那个不做事，免得反复 setData 触发重渲染
+  onScale(e) {
+    const s = e.currentTarget.dataset.s || 'course';
+    if (s === this.data.scale) return;
+    // 老师模式没有「课程分」这一档，切过去是一个空表单，直接挡掉
+    if (s === 'course' && this.data.teacherOnly) return;
+    if (s === 'teacher' && !this.data.teacher) {
+      this.onNeedTeacher();
+      return;
+    }
+    this.setData({ scale: s });
+  },
+
+  // 还没填老师就想给老师打分：别只弹个错误，直接把老师输入那块提上来提示一下
+  onNeedTeacher() {
+    wx.showToast({ title: '先在第 3 步填上老师名，才能给老师打分', icon: 'none', duration: 2400 });
+    wx.pageScrollTo({ selector: '.tch-pick', duration: 260 });
+  },
+
+  toggleTag(e) {
+    const t = e.currentTarget.dataset.t;
+    let tags = this.data.tags.slice();
+    const i = tags.indexOf(t);
+    if (i >= 0) tags.splice(i, 1);
+    else tags.push(t);
+    // wxml 里不能用 tags.indexOf()（不支持函数调用，会导致整页渲染失败），走 map
+    const map = {};
+    tags.forEach((x) => { map[x] = true; });
+    this.setData({ tags: tags, tagsMap: map });
+  },
+
+  onContent(e) {
+    this.setData({ content: e.detail.value });
+  },
+
+  toggleAnonymous() {
+    this.setData({ anonymous: !this.data.anonymous });
+  },
+
+  removeTag(e) {
+    const t = e.currentTarget.dataset.t;
+    const tags = this.data.tags.filter((x) => x !== t);
+    const map = {};
+    tags.forEach((x) => { map[x] = true; });
+    this.setData({ tags: tags, tagsMap: map });
+  },
+
+  async submit() {
+    // 防重复提交（一次评价出两条记录的修复，双保险之一）：
+    //   ① _submitLock 是同步标志，必须在任何 await 之前上锁 ——
+    //      旧版锁放在 checkText 之后才置位，快速连点两下会双双通过检查，
+    //      各自走一遍 addReview，云端就多了两条一样的评价；
+    //   ② _published 挡住成功后 700ms 返回动画期间的第二连击；
+    //   ③ 云端 reviewAdd 还有同内容 10 分钟幂等去重兜底（服务端防重试）。
+    if (this._submitLock || this._published || this.data.submitting) {
+      wx.showToast({ title: '还在发上一条，稍等一下', icon: 'none' });
+      return;
+    }
+    this._submitLock = true;
+    this.setData({ submitting: true });
+    const draftId = this.data.draftId || '';
+    try {
+      const content = String(this.data.content || '').trim();
+      if (content.length < 5) {
+        wx.showToast({ title: '至少写 5 个字', icon: 'none' });
+        return;
+      }
+      if (!moderation.guardText(content, '评价')) return;
+
+      const teacherName = String(this.data.teacher || '').trim();
+      // 老师模式的额外校验：这一页没有课程，老师名和分就是全部内容，
+      // 少了任何一样，这条评价发出去谁也认领不到（课程为空、老师为空）
+      if (this.data.teacherOnly) {
+        if (!teacherName) {
+          wx.showToast({ title: '填一下老师姓名', icon: 'none' });
+          return;
+        }
+        if (Number(this.data.teacherScore) < 1) {
+          wx.showToast({ title: '给老师打个分吧', icon: 'none', duration: 2200 });
+          return;
+        }
+      }
+
+      // 服务端再校验一次：本地词表只是提示，拦截权在云函数
+      const safe = await userApi.checkText({ content: content });
+      if (safe && safe.ok === false) {
+        wx.showToast({ title: safe.msg || '内容不合适', icon: 'none' });
+        return;
+      }
+
+      // teacherName 在上面校验时已经算好，这里直接用，不重复声明
+      const teacherScore = teacherName ? (Number(this.data.teacherScore) || 0) : 0;
+      // 老师模式没有课程分：把老师分同时写进 score，
+      // 这样老师口碑表里的「课程分」那一栏不会收一个 0 进去把均分拉崩
+      const finalScore = this.data.teacherOnly ? (teacherScore || Number(this.data.score) || 0) : this.data.score;
+
+      if (this.data.isEdit) {
+        const updated = await store.updateReview(this.data.editingId, {
+          score: finalScore,
+          content: content,
+          tags: this.data.tags,
+          anonymous: this.data.anonymous,
+          teacher: teacherName,
+          teacherVerified: !!this.data.teacherVerified,
+          teacherScore: teacherScore
+        });
+        if (!updated || updated.ok === false) {
+          wx.showToast({ title: (updated && updated.msg) || '评价没保存上，再试一次', icon: 'none', duration: 3000 });
+          return;
+        }
+        wx.showToast({ title: '已更新', icon: 'success' });
+        this._published = true;
+      } else {
+        const r = await store.addReview({
+          courseId: this.data.id,
+          score: finalScore,
+          content: content,
+          tags: this.data.tags,
+          anonymous: this.data.anonymous,
+          teacher: teacherName,
+          teacherVerified: !!this.data.teacherVerified,
+          teacherScore: teacherScore
+        });
+        if (!r || r.ok === false) {
+          // 云端存不住时内容还在本机，说清楚真相，别让人以为丢了又重写一遍
+          wx.showToast({ title: (r && r.msg) || '评价没能发出去', icon: 'none', duration: 3000 });
+          return;
+        }
+        wx.showToast({ title: this.data.anonymous ? '已匿名发布' : '评价成功', icon: 'success' });
+        // 发掉了：别让 onUnload 再自动存一遍，草稿箱里那份也该撤掉
+        this._published = true;
+        if (draftId) store.removeDraft(draftId);
+      }
+    } catch (e) {
+      wx.showToast({ title: '网络好像不太稳，内容先存在本机了', icon: 'none', duration: 3000 });
+      return;
+    } finally {
+      // 无论走哪条出口都复位：校验不过要能改完再发，
+      // 卡住时 onShow 的兜底复位仍然有效
+      this._submitLock = false;
+      this.setData({ submitting: false });
+    }
+    setTimeout(() => {
+      wx.navigateBack();
+    }, 700);
+  }
+});

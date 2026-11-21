@@ -1,0 +1,185 @@
+/* pages/forum/edit —— 改自己发的帖子。类名 ed-*，
+   .card / .container / .muted 来自 app.wxss，这里不重复。
+   视觉刻意和发帖页（composer-*）相似但更安静：编辑是低频动作，
+   不该做出「我要开始一篇大创作」的气势。 */
+
+.ed {
+  padding-bottom: 160rpx; /* 给底部两个按钮留出空间，别让最后一张卡贴着它 */
+}
+
+/* ---------- 进不来 / 没得改 ---------- */
+.ed-note {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: var(--sp-9) 28rpx;
+}
+.ed-note__icon {
+  width: 40rpx;
+  height: 40rpx;
+  flex-shrink: 0;
+}
+.ed-note__text {
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+.ed-note--off .ed-note__text { color: var(--c-text); }
+
+/* ---------- 只读信息条 ---------- */
+.ed-meta { padding: 24rpx 28rpx; }
+.ed-meta__row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 8rpx 0;
+}
+.ed-meta__icon {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+}
+.ed-meta__k {
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+  flex-shrink: 0;
+}
+.ed-meta__v {
+  font-size: var(--fs-sub);
+  color: var(--c-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ed-meta__note {
+  margin-top: 12rpx;
+  padding-top: 16rpx;
+  border-top: 2rpx solid var(--c-fill);
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+  line-height: 1.7;
+}
+
+/* ---------- 表单 ---------- */
+.ed-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-text);
+}
+/* 剩余字数。快见底时才变色 —— 一开始就红着会让「还剩 2000 字」变成一种警告 */
+.ed-count {
+  font-size: var(--fs-tag);
+  font-weight: 400;
+  color: var(--c-faint);
+  flex-shrink: 0;
+}
+.ed-count--warn { color: var(--c-danger); }
+
+.ed-field {
+  width: 100%;
+  min-height: 88rpx;
+  font-size: var(--fs-h2);
+  color: var(--c-text);
+}
+
+.ed-area {
+  width: 100%;
+  min-height: 320rpx;
+  font-size: var(--fs-body);
+  line-height: 1.75;
+  color: var(--c-text);
+}
+
+/* ---------- 配图 ----------
+   尺寸 / 间距 / 圆角与论坛详情页的 .detail__img 刻意取同一套数值：
+   编辑页和详情页看的是同一张图，差 10rpx 就会在「发布」那一刻跳一下，
+   用户只会觉得"发出来的图和刚才不一样"，说不出哪里不对。 */
+.ed-imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}
+.ed-img-cell {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+}
+.ed-img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-l);
+  background: var(--c-fill);
+}
+.ed-img-del {
+  position: absolute;
+  top: -12rpx;
+  right: -12rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: var(--r-pill);
+  background: rgba(23, 32, 51, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ed-img-del-icon {
+  width: 22rpx;
+  height: 22rpx;
+}
+.ed-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  border: 2rpx dashed #cfd8e6;
+  border-radius: var(--r-m);
+}
+.ed-add-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+.ed-add-text {
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+
+.ed-note-inline {
+  margin-top: 20rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-amber-deep);
+  line-height: 1.7;
+}
+
+/* ---------- 提示 ---------- */
+.ed-tip {
+  margin: 8rpx 8rpx 24rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+
+/* ---------- 底部两个按钮 ----------
+   「取消」和「保存」并排且都占位：保存是主动作，取消也是主动作
+   （改到一半不想要了是一个真实且常见的动作，不该被藏进右上角） */
+.ed-foot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--sp-7) calc(var(--sp-5) + env(safe-area-inset-bottom));
+  /* 原来是 rgba(255,255,255,.94)：深色模式下这条底还是白的，
+     跟上面一整屏深色页面裂成两半。改用 --c-card，并和详情页输入栏一样给上描边 */
+  background: var(--c-card);
+  border-top: 2rpx solid var(--c-line);
+}
+.ed-btn { flex: 1; min-width: 0; }
+.ed-btn--back { flex: 0 0 200rpx; }

@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "闲置分享",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "pill-selector": "/components/ui/pill-selector/index",
+    "sticky-filter": "/components/ui/sticky-filter/index",
+    "net-tip": "/components/ui/net-tip/index"
+  }
+}

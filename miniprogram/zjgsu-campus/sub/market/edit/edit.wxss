@@ -1,0 +1,164 @@
+/* sub/market/edit/edit.wxss —— 发布表单
+   场景色：闲置橙 #F58A32 / 浅底 #FFF3E9 / 标签文字 #D9731F */
+
+.e-page { padding-top: 20rpx; }
+
+.e-label { margin-bottom: 16rpx; font-size: var(--fs-sub); font-weight: 600; color: var(--c-text); }
+
+/* ---------- 类型（我丢了 / 我捡到 / 闲置分享） ---------- */
+.e-types { display: flex; gap: 16rpx; flex-wrap: wrap; }
+.e-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-sunken);
+  color: var(--c-muted);
+  font-size: var(--fs-sub);
+  border: 2rpx solid var(--c-line);
+}
+.e-type--hover { opacity: 0.72; }
+.e-type__icon { width: 32rpx; height: 32rpx; flex-shrink: 0; }
+.e-type.on {
+  background: var(--c-market-soft);
+  border-color: var(--c-market);
+  color: var(--c-market-deep);
+  font-weight: 600;
+}
+
+/* ---------- 输入 ---------- */
+.e-input,
+.e-area {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: var(--fs-body);
+  color: var(--c-text);
+}
+.e-input {
+  /* 定高修复：input 不给固定高度会被默认的 1.4rem 拦腰截字 */
+  height: 88rpx;
+  padding: 0 4rpx;
+}
+.e-area {
+  min-height: 180rpx;
+  padding: 8rpx 4rpx;
+  line-height: 1.7;
+}
+.e-placeholder { color: var(--c-faint); }
+.e-counter { text-align: right; font-size: var(--fs-tag); color: var(--c-faint); margin-top: 8rpx; }
+
+.e-line {
+  display: flex;
+  align-items: center;
+  border-top: 2rpx solid #f0f1f3;
+  margin-top: 8rpx;
+}
+.e-prefix { margin-right: 8rpx; font-size: var(--fs-h2); font-weight: 700; color: var(--c-market); }
+.e-price { flex: 1; min-width: 0; }
+
+/* ---------- 胶囊（联系方式类型 / 闲置分类） ---------- */
+.e-chips { display: flex; gap: 16rpx; flex-wrap: wrap; margin-top: 4rpx; }
+.e-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 88rpx;
+  padding: 0 32rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  color: var(--c-muted);
+  font-size: var(--fs-sub);
+}
+.e-chip--hover { opacity: 0.72; }
+.e-chip.on {
+  border-color: var(--c-market);
+  background: var(--c-market-soft);
+  color: var(--c-market-deep);
+  font-weight: 600;
+}
+.e-privacy { margin-top: 16rpx; font-size: var(--fs-tag); color: var(--c-faint); }
+
+/* ---------- 图片 ---------- */
+.e-grid { display: flex; gap: 16rpx; flex-wrap: wrap; }
+.e-cell {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: var(--r-l);
+  overflow: hidden;
+  background: var(--c-sunken);
+}
+.e-img { width: 100%; height: 100%; }
+.e-del {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 56rpx;
+  height: 56rpx;
+  background: rgba(23, 32, 51, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 0 0 var(--r-l);
+}
+.e-del image { width: 32rpx; height: 32rpx; }
+.e-del--hover { opacity: 0.72; }
+/* 视觉上是角标，热区靠伪元素补到 88rpx 以上（cell 有 overflow:hidden，不会溢出格子） */
+.e-del::after {
+  content: '';
+  position: absolute;
+  left: -16rpx;
+  top: -16rpx;
+  right: -32rpx;
+  bottom: -32rpx;
+}
+
+.e-cell--add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  background: var(--c-sunken);
+  border: 2rpx dashed var(--c-line);
+}
+.e-cell--add image { width: 48rpx; height: 48rpx; }
+.e-cell__hint { font-size: var(--fs-micro); color: var(--c-faint); }
+.e-cell--add--hover { opacity: 0.72; }
+
+/* ---------- 底部按钮 ---------- */
+.e-foot { display: flex; align-items: center; gap: 16rpx; }
+.e-draft,
+.e-submit {
+  box-sizing: border-box;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96rpx;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.e-draft::after,
+.e-submit::after { border: none; }
+.e-draft {
+  flex: 1;
+  background: var(--c-card);
+  color: var(--c-muted);
+  border: 2rpx solid var(--c-line);
+}
+.e-draft--hover { opacity: 0.72; }
+.e-submit {
+  flex: 2;
+  background: var(--c-market);
+  color: var(--c-on-strong);
+  box-shadow: 0 8rpx 24rpx rgba(245, 138, 50, 0.24);
+}
+.e-submit--hover { opacity: 0.72; }
+.e-gap { height: 40rpx; }

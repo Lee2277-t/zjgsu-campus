@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "漂流瓶",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "app-header": "/components/ui/app-header/index"
+  }
+}

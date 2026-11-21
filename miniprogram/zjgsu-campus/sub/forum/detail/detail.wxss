@@ -1,0 +1,743 @@
+/* sub/forum/detail/detail.wxss —— 帖子详情（投票 + 留言） */
+
+.detail-page {
+  /* 给固定输入栏留位；自定义导航条不占位，靠 app-header 自己撑开。
+     输入栏自带 env(safe-area-inset-bottom)，这里必须加同样的量，
+     否则 iPhone 全面屏上最后一条留言会被底部小横条压住 */
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
+}
+/* 有待发图片时底栏会长出一条缩略图带（约 180rpx），
+   页面底部得同步让出这么多，不然最后一条留言被压在图片带下面看不见 */
+.detail-page--tall {
+  padding-bottom: calc(380rpx + env(safe-area-inset-bottom));
+}
+
+/* --------------------------------------------------------------------------
+   正文
+   -------------------------------------------------------------------------- */
+.detail__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 44rpx;
+  margin-bottom: 16rpx;
+}
+.detail__mini-icon { width: 24rpx; height: 24rpx; }
+.detail__time {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+
+/* 浏览人数跟在时间后面：同字号、同色，靠间距分开。
+   它是背景信息 —— 「谁发的、什么时候」是主信息，看过多少人是补充 */
+.detail__views {
+  margin-left: var(--sp-3);
+  flex-shrink: 0;
+}
+
+.detail__course {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 64rpx;
+  padding: 0 24rpx;
+  margin-bottom: 20rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-brand-soft);
+  color: var(--c-brand-deep);
+  font-size: var(--fs-sub);
+}
+.detail__course-text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.detail__course-go { flex-shrink: 0; font-size: var(--fs-aux); }
+
+.detail__title { margin-bottom: 20rpx; }
+.detail__topic-intro {
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-campus-soft);
+  color: var(--c-campus-deep);
+  font-size: var(--fs-sub);
+  line-height: 1.7;
+}
+.detail__body {
+  color: var(--c-text);
+  font-size: var(--fs-h2);
+  line-height: 1.75;
+}
+
+/* 基准尺寸：200rpx / 间距 16rpx / 圆角 --r-l / 占位 --c-fill。
+   发帖页 .ed-imgs 与这里取同一套数值（见 edit.wxss 注释），改一处要改两处。 */
+.detail__images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+.detail__img {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: var(--r-l);
+  background: var(--c-fill);
+}
+
+/* 作者行：头像 + 名字 + 主页入口，一行排开。
+   名字吃满剩余宽度并允许收缩（truncate 要生效必须有 min-width: 0），
+   主页入口贴右 —— 昵称长的时候先省略名字，而不是把「看TA的主页」顶出屏幕 */
+.detail__byline {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 20rpx 0 4rpx;
+}
+.detail__ava {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: var(--c-profile-soft);
+}
+.detail__ava-img { display: block; width: 100%; height: 100%; }
+.detail__ava-txt {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-profile);
+  font-size: var(--fs-sub);
+  font-weight: 600;
+}
+.detail__byline-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.detail__author { color: var(--c-brand-deep); }
+.detail__byline-go { flex-shrink: 0; font-size: var(--fs-aux); }
+
+/* --------------------------------------------------------------------------
+   互动操作：一行放不下就换行，320 宽度也不挤压
+   -------------------------------------------------------------------------- */
+.detail__ops {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx 4rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid var(--c-line);
+}
+.detail__op {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-height: var(--hit-sm);
+  padding: 0 20rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-sunken);
+  color: var(--c-muted);
+  font-size: var(--fs-aux);
+}
+.detail__op-icon { width: 30rpx; height: 30rpx; }
+.detail__op--on { background: var(--c-brand-soft); color: var(--c-brand-deep); font-weight: 600; }
+.detail__op--no { background: var(--c-campus-soft); color: var(--c-campus-deep); font-weight: 600; }
+.detail__op--fav-on { background: var(--c-market-soft); color: var(--c-market-deep); font-weight: 600; }
+.detail__op--warn { background: var(--c-danger-soft); color: var(--c-danger); font-weight: 600; }
+/* 微信 button 默认灰底边框，改成和其他操作一致的胶囊 */
+.detail__op--btn {
+  background: var(--c-sunken);
+  border: none;
+  padding: 0 20rpx;
+  line-height: var(--hit-sm);
+  box-shadow: none;
+  font-family: inherit;
+  font-size: var(--fs-aux);
+  font-weight: 400;
+}
+.detail__op--btn text { font-size: var(--fs-aux); line-height: inherit; }
+.detail__op--btn::after { border: none; }
+
+.detail__tip {
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-amber-soft);
+  border: 2rpx solid #ffe1a6;
+  color: var(--c-amber-deep);
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+}
+
+.detail__back {
+  margin-top: 24rpx;
+  text-align: center;
+  min-height: 88rpx;
+  line-height: 88rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-brand-soft);
+  color: var(--c-brand-deep);
+  font-size: var(--fs-body);
+}
+
+/* --------------------------------------------------------------------------
+   投票概览（vote-card 下面那张）
+   -------------------------------------------------------------------------- */
+.poll-hero {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  margin-bottom: 24rpx;
+  padding: 32rpx;
+  border-radius: var(--r-xl);
+  background: linear-gradient(120deg, var(--c-brand) 0%, #4f4ff0 52%, var(--c-forum) 100%);
+  box-shadow: 0 8rpx 24rpx rgba(43, 90, 237, 0.22);
+}
+.poll-hero__ring {
+  flex-shrink: 0;
+  width: 176rpx;
+  height: 176rpx;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.poll-hero__core {
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: var(--r-pill);
+  background: rgba(23, 32, 51, 0.32);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.poll-hero__count { font-size: var(--fs-stat); font-weight: 700; color: var(--c-on-strong); line-height: 1.2; }
+.poll-hero__unit { font-size: var(--fs-micro); color: rgba(255, 255, 255, 0.78); }
+.poll-hero__text { flex: 1; min-width: 0; }
+.poll-hero__mode {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-on-strong);
+}
+.poll-hero__deadline {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  font-size: var(--fs-aux);
+  color: rgba(255, 255, 255, 0.86);
+}
+.poll-hero__clock { width: 28rpx; height: 28rpx; }
+
+/* --------------------------------------------------------------------------
+   留言区
+   -------------------------------------------------------------------------- */
+.detail__section {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 8rpx 8rpx 20rpx;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.detail__section-icon { width: 34rpx; height: 34rpx; }
+
+/* 留言：左边头像列 + 右边正文列。
+   头像独立成列，而不是塞进头部那一行 —— 头部右边还有「删除 / 举报」，
+   三样挤在一行时昵称一长就把按钮顶出去；分列之后正文也跟着头像对齐，
+   一屏下来能看清哪几行是同一个人在说 */
+.comment {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+.comment__ava {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: var(--c-profile-soft);
+}
+.comment__ava-img { display: block; width: 100%; height: 100%; }
+.comment__ava-txt {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-profile);
+  font-size: var(--fs-h2);
+  font-weight: 600;
+}
+.comment__main { flex: 1; min-width: 0; }
+
+.comment__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+/* min-width: 0 才能让长昵称收缩出省略号：flex 子项默认不肯缩到内容宽度以下 */
+.comment__name { min-width: 0; font-size: var(--fs-sub); font-weight: 600; color: var(--c-text); }
+.comment__time { flex-shrink: 0; font-size: var(--fs-tag); }
+.comment__content {
+  color: var(--c-text);
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* --------------------------------------------------------------------------
+   留言操作行：赞 / 踩 / 回复 / 删除 / 举报
+   五个动作挤在一行，所以图标胶囊走 --hit-sm（72rpx）而不是标准 88rpx ——
+   四个 88rpx 会把卡片撑成两行。文字动作（删除 / 举报）是这一行的次要动作，
+   用 margin-left:auto 顶到最右，和「表达态度」那三个在视觉上分开
+   -------------------------------------------------------------------------- */
+.cacts {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+/* 二级回复里那一行再小一档：它已经缩进一次了，再和一级一样大就抢了正文的位置 */
+.cacts--sm { margin-top: 8rpx; }
+
+.cact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  min-width: 72rpx;
+  height: 72rpx;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-pill);
+}
+.cact__icon { width: 32rpx; height: 32rpx; flex-shrink: 0; }
+.cact__num { font-size: var(--fs-tag); color: var(--c-muted); }
+/* 选中态：底色 + 文字一起变主色。只换图标不换底的话，
+   在小屏上一排灰图标里根本看不出自己点了哪个 */
+.cact--on { background: var(--c-brand-soft); }
+.cact--on .cact__num { color: var(--c-brand); font-weight: 600; }
+.cact--no { background: var(--c-fill); }
+.cact--no .cact__num { color: var(--c-text); font-weight: 600; }
+
+/* 文字动作（删除 / 举报 / 已举报） */
+.cact-text {
+  margin-left: auto;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+  line-height: 72rpx;
+}
+.cact-text--danger { color: var(--c-danger); }
+.cact-text--mute { color: var(--c-faint); }
+
+/* --------------------------------------------------------------------------
+   二级回复
+   缩进靠 padding-left 而不是给整块加 margin：margin 会把右侧的圆角卡片
+   一起往里推，看起来像嵌了另一张卡；padding 则是「内容往里挤一点」，
+   更符合「这几条属于上面那条」的意思
+   -------------------------------------------------------------------------- */
+.replies {
+  margin-top: 12rpx;
+  padding: 12rpx 0 0;
+  border-top: 2rpx solid var(--c-line);
+}
+.reply {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  padding: 12rpx 0 0;
+}
+.reply__ava {
+  flex-shrink: 0;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: var(--c-profile-soft);
+}
+.reply__ava-img { display: block; width: 100%; height: 100%; }
+.reply__ava-txt {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-profile);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+}
+.reply__main { flex: 1; min-width: 0; }
+.reply__head {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.reply__name { min-width: 0; font-size: var(--fs-aux); font-weight: 600; color: var(--c-text); }
+/* 「回复 @某某」：夹在名字和时间中间，用最弱的一档字色 ——
+   它是给第三人看的上下文，不是这条回复的主角 */
+.reply__to {
+  flex-shrink: 0;
+  font-size: var(--fs-micro);
+  color: var(--c-faint);
+}
+.reply__content {
+  color: var(--c-text);
+  font-size: var(--fs-sub);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* 回复里的图统一按小图排：它已经缩进了一层，再给 320rpx 会直接顶出卡片 */
+.reply__imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+.reply__imgs .comment__img { width: 176rpx; height: 176rpx; }
+
+/* 展开 / 收起：整行可点，热区 72rpx */
+.reply-more {
+  height: 72rpx;
+  line-height: 72rpx;
+  margin-top: 8rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-brand);
+}
+
+/* 留言里的图（群二维码、截图这类）。
+   1 / 2 张给大一点 —— 群里发出去的二维码要能被长按识别，
+   缩得太小就扫不动了；3 张按三宫格排，正好铺满一行 */
+.comment__imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+.comment__img {
+  border-radius: var(--r-l);
+  background: var(--c-fill);
+}
+.comment__imgs.imgs-1 .comment__img { width: 320rpx; height: 320rpx; }
+.comment__imgs.imgs-2 .comment__img { width: 236rpx; height: 236rpx; }
+.comment__imgs.imgs-many .comment__img { width: 176rpx; height: 176rpx; }
+
+/* --------------------------------------------------------------------------
+   固定输入栏
+   上下两层：待发图片带（有图时才出现）+ 输入行。
+   原来是一行 flex（输入框 + 发送），加了选图之后一行塞不下三样东西，
+   而且选中的图必须有地方摆 —— 看不到自己选了什么，等于闭着眼睛发图
+   -------------------------------------------------------------------------- */
+/* 与私信页 .ct-bar 同一套：贴底、卡片底、上描边分隔、内边距一致。
+   分隔统一用 border-top 而不是向上投影——投影在深色模式下是块看不清的灰，
+   描边则跟着 --c-line 自动换色。 */
+.input-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4) var(--sp-6) calc(var(--sp-4) + env(safe-area-inset-bottom));
+  background: var(--c-card);
+  border-top: 2rpx solid var(--c-line);
+}
+/* 回复条：在输入行上面单起一行，说清「正在回谁」。
+   它比待发图带更重要 —— 图选错了看得见，回错了人发出去才发现 */
+.ib-reply {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 4rpx 16rpx;
+}
+.ib-reply__icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+.ib-reply__text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-aux);
+  color: var(--c-brand);
+}
+/* 取消回复：视觉 32rpx，热区撑到 64rpx */
+.ib-reply__x {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+}
+.ib-reply__x-icon {
+  width: 32rpx;
+  height: 32rpx;
+  padding: 8rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-fill);
+  box-sizing: border-box;
+}
+
+.ib-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+/* 选图按钮：和输入框等高，热区 88rpx，别让人点不准 */
+.ib-pick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88rpx;
+  height: 88rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  background: var(--c-brand-soft);
+}
+.ib-pick--off { opacity: 0.45; }
+.ib-pick__icon { width: 40rpx; height: 40rpx; }
+
+/* 待发送的图片带 */
+.ib-pending {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  /* 和图本身留一点缝：× 按钮是负偏移出去的，贴着输入行会被压住 */
+  padding: 16rpx 0 20rpx;
+}
+.ib-thumb {
+  position: relative;
+  width: 112rpx;
+  height: 112rpx;
+  flex-shrink: 0;
+}
+.ib-thumb__img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-m);
+  background: var(--c-fill);
+}
+/* 移除按钮：视觉 40rpx，热区撑到 64rpx，手指够得着 */
+.ib-thumb__x {
+  position: absolute;
+  top: -12rpx;
+  right: -12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+}
+.ib-thumb__x-icon {
+  width: 40rpx;
+  height: 40rpx;
+  padding: 8rpx;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--sh-4);
+  box-sizing: border-box;
+}
+/* 「2/3」这样的计数：摆出来比让用户自己数缩略图快 */
+.ib-pending__note {
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+
+/* 88rpx 不是随手定的：项目热区规范就是「≥ 88rpx」，80rpx 会让人点空。
+   凹陷底用 --c-sunken（语义就是"比卡片更沉一档"），和私信页 .ct-input 同一个令牌。 */
+.input-bar__input {
+  flex: 1;
+  min-width: 0;
+  min-height: 88rpx;
+  max-height: 220rpx;
+  padding: 20rpx var(--sp-7);
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  box-sizing: border-box;
+}
+.input-bar__send {
+  flex-shrink: 0;
+  min-width: 140rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: var(--r-pill);
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+.input-bar__send--off { background: var(--c-fill); color: var(--c-faint); }
+
+/* --------------------------------------------------------------------------
+   树洞详情页：与树洞主页同一套深底 + 毛玻璃
+   白底点进树洞详情会像走错了地方，所以背景 / 卡片 / 文字整套换成树洞的样子。
+   底色直接取树洞主页默认那一档（#171438），保证来回切换时看不出断裂
+   -------------------------------------------------------------------------- */
+.detail-page--hole {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background-color: #171438;
+  color: rgba(255, 255, 255, 0.9);
+}
+/* 顶部光晕：和主页的氛围层呼应，不然详情页显得光秃秃的 */
+.detail-page--hole::before {
+  content: '';
+  position: absolute;
+  left: -20%;
+  top: -10%;
+  width: 140%;
+  height: 420rpx;
+  border-radius: var(--r-pill);
+  background-color: rgba(118, 83, 238, 0.34);
+  filter: blur(60rpx);
+  pointer-events: none;
+  z-index: 0;
+}
+/* ⚠️ 不能写 .detail-page--hole > * { position: relative }：
+   固定底栏 .input-bar 同样是 container 的直接子元素，被改成 relative 后
+   它就不再是 fixed，底栏会掉进内容流里 —— 布局当场坏掉。
+   只给需要压在光晕之上的卡片抬层级，其余元素一律不动 */
+.detail-page--hole .card,
+.detail-page--hole .poll-hero { position: relative; z-index: 1; }
+
+/* 卡片：白卡换成半透明玻璃 */
+.detail-page--hole .card,
+.detail-page--hole .poll-hero {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+.detail-page--hole .title-lg,
+.detail-page--hole .detail__title { color: var(--c-on-strong); }
+.detail-page--hole .detail__body { color: rgba(255, 255, 255, 0.92); }
+.detail-page--hole .detail__time,
+.detail-page--hole .detail__byline-name,
+.detail-page--hole .hint,
+.detail-page--hole .muted,
+.detail-page--hole .comment__time { color: rgba(255, 255, 255, 0.6); }
+.detail-page--hole .comment__name { color: var(--c-on-strong); }
+.detail-page--hole .comment__content { color: rgba(255, 255, 255, 0.86); }
+/* 树洞是深底：浅蓝底的头像圆在深色卡上会亮得像贴纸，
+   换成半透明白底 + 白字，跟这一页其它标签一个调子 */
+.detail-page--hole .detail__ava,
+.detail-page--hole .comment__ava { background: rgba(255, 255, 255, 0.14); }
+.detail-page--hole .detail__ava-txt,
+.detail-page--hole .comment__ava-txt { color: var(--c-on-strong); }
+.detail-page--hole .detail__topic-intro,
+.detail-page--hole .detail__tip {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.75);
+}
+.detail-page--hole .tag--forum {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+}
+/* 操作行（赞 / 分享 / 收藏 / 删除…）：
+   以前这里只把文字刷成白的，胶囊底还是浅色的 #f6f8fb ——
+   一排亮色药丸压在深底上，就是「操作栏不搭」的来源。
+   现在整套换成和树洞列表同一规格的玻璃胶囊（透明度 / 描边 / 圆角对齐
+   hole.wxss 的 .reaction），来回切换看不出是两套 UI。 */
+.detail-page--hole .detail__ops {
+  gap: 12rpx;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+.detail-page--hole .detail__op {
+  min-height: 68rpx;
+  padding: 0 24rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.86);
+}
+.detail-page--hole .detail__op--on,
+.detail-page--hole .detail__op--no,
+.detail-page--hole .detail__op--fav-on {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: var(--c-on-strong);
+}
+.detail-page--hole .detail__op--warn {
+  background: rgba(221, 75, 85, 0.18);
+  border-color: rgba(255, 138, 148, 0.4);
+  color: #ffb3ba;
+}
+/* 分享是微信 button：默认灰底 + 边框要一并清掉，否则一颗灰药丸混在玻璃里 */
+.detail-page--hole .detail__op--btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.12);
+  line-height: 68rpx;
+  padding: 0 24rpx;
+  color: rgba(255, 255, 255, 0.86);
+}
+/* 浅色图标在深底上几乎看不见：反相成白色。
+   WXML 里图标是按 liked/favorited 切换的，静态换不了，这里用透明度提亮 */
+.detail-page--hole .detail__op-icon { opacity: 0.9; }
+
+/* 底部输入栏：白底 + 白阴影在树洞页底部切出一条亮边，同样换成玻璃 */
+.detail-page--hole .input-bar {
+  background: rgba(23, 20, 56, 0.92);
+  border-top: 2rpx solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.28);
+}
+.detail-page--hole .input-bar__input {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--c-on-strong);
+}
+/* 选图按钮 / 缩略图 / 计数：树洞页同样换成玻璃规格 ——
+   浅色方块压在深底上会像从别的页面掉下来的 */
+.detail-page--hole .ib-pick { background: rgba(255, 255, 255, 0.1); }
+.detail-page--hole .ib-thumb__img,
+.detail-page--hole .comment__img { background: rgba(255, 255, 255, 0.08); }
+.detail-page--hole .ib-pending__note { color: rgba(255, 255, 255, 0.6); }
+
+.detail-page--hole .detail__course {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d6cbff;
+}
+
+/* 树洞三连：抱抱 / 递茶 / 摸摸头。
+   和列表页同一套数据与同一套观感，点下去要立刻有反应 */
+.detail__reacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid rgba(255, 255, 255, 0.1);
+}
+/* 尺寸与配色和 hole.wxss 的 .reaction 完全一致（8rpx 22rpx / 24rpx / 同透明度），
+   列表页与详情页看着就是同一个组件 */
+.detail__react {
+  padding: 8rpx 24rpx;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.12);
+  font-size: var(--fs-aux);
+  color: rgba(255, 255, 255, 0.86);
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+.detail__react--on {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: var(--c-on-strong);
+  font-weight: 600;
+}
+/* 点下去立刻有回应：和列表页一样按下时缩一下，不然会觉得没点上 */
+.detail__react:active { transform: scale(0.94); }
+.detail__react:active { transform: scale(0.94); }
+
+.detail__loading { padding: 40rpx 24rpx; }

@@ -1,0 +1,31 @@
+<!-- components/ui/app-header/index.wxml
+     自定义导航：状态栏占位 + 胶囊对齐 + 标题 + 返回
+
+     状态栏那一段**只占位不画内容**：时间、电量由系统绘制，
+     自己再画一遍就会跟系统的重叠（这正是「二级页顶部突兀显示时间和电量」的原因）。
+     占位高度 = nav.statusBarHeight，由 JS 从系统信息 API 动态取（utils/system.js），
+     刘海屏 / 灵动岛 / 安卓挖孔都不会压到内容。 -->
+<view
+  class="app-header {{dark ? 'app-header--dark' : ''}} {{border ? '' : 'app-header--noborder'}}"
+  style="padding-top:{{nav.statusBarHeight}}px;{{bg ? 'background:' + bg + ';' : ''}}"
+>
+  <view class="app-header__bar" style="height:{{nav.navBarHeight}}px;">
+    <view class="app-header__side">
+      <view
+        wx:if="{{showBack}}"
+        class="app-header__back pressable {{dark ? 'app-header__back--glass' : ''}}"
+        bindtap="onBack"
+        hover-class="{{dark ? 'app-header__back--active-dark' : 'app-header__back--active'}}"
+        hover-stay-time="80"
+      >
+        <image class="app-header__back-icon" src="/assets/icons/chevron-left--{{dark ? 'white' : 'ink'}}.svg" mode="aspectFit" />
+      </view>
+    </view>
+
+    <view class="app-header__title-wrap" style="padding-right:{{nav.capsuleRight}}px;">
+      <text class="app-header__title">{{title}}</text>
+    </view>
+
+    <view class="app-header__side app-header__side--right"></view>
+  </view>
+</view>

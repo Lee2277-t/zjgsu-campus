@@ -1,0 +1,9 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "navigationBarTitleText": "匿名树洞",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "app-header": "/components/ui/app-header/index"
+  }
+}

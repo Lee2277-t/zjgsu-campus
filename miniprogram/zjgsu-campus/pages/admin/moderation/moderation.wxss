@@ -1,0 +1,651 @@
+/* pages/admin/moderation/moderation.wxss —— 内容审核
+   规格来源：docs/native-ui-contract.md + src/views/mine/MineHomeView.vue 的「内容审核」入口行。
+   复用 app.wxss 的 .card / .inner / .tag / .pressable / .hit / .segmented，
+   这里只写本页特有的语义类，不重复声明上面的令牌。
+   两条硬约束：
+     1) 本页面任何祖先节点都不出现 transform（.container 只跑 opacity 动画），
+        否则下面 position:fixed 的批量条会退化成相对定位；
+     2) 全 rpx，不碰 window / document / backdrop-filter / clamp。 */
+
+/* ---------- 页面骨架 ---------- */
+.mod-page {
+  /* 底部批量条 + 安全区留位，别让最后一张卡被压住 */
+  padding-bottom: 300rpx;
+  padding-bottom: calc(300rpx + env(safe-area-inset-bottom));
+}
+
+/* 举报这一屏的两个视角：待处理 / 已处置。
+   复用全局 .segmented（不另造一套分段控件），只把它压矮一点 ——
+   它下面紧跟着卡片列表，跟顶部那个换分区的条一样高会抢主次 */
+.mod-subseg {
+  margin-bottom: 20rpx;
+}
+.mod-subseg .segmented-item {
+  min-height: 72rpx;
+  font-size: var(--fs-sub);
+}
+
+/* 归档筛选：全部 / 已确认 / 已驳回 */
+.arc-scope {
+  margin: 8rpx 0 20rpx;
+  padding-left: 4rpx;
+}
+
+.sec-title {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  flex-wrap: wrap;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  margin: 4rpx 4rpx 20rpx;
+}
+.sec-sub {
+  font-size: var(--fs-tag);
+  font-weight: 400;
+  color: var(--c-faint);
+}
+
+/* 分段标签：32rpx 以下宽度也不溢出，短文案优先。
+   四个分区（举报 / 置顶 / 通知 / 封禁）挤在一行时更紧，所以允许压缩字号并禁止换行 —
+   一旦换行，胶囊会被撑高，整条吸顶栏跟着变高 */
+.seg-label {
+  font-size: var(--fs-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.seg-item--hover { opacity: 0.72; }
+
+/* ---------- 置顶 / 封禁名册的搜索条 ---------- */
+.mod-search { margin-bottom: 16rpx; }
+.mod-search__icon { width: 32rpx; height: 32rpx; flex-shrink: 0; }
+.mod-search__input { flex: 1; min-width: 0; font-size: var(--fs-body); }
+.mod-search__do {
+  flex-shrink: 0;
+  padding: 8rpx 20rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-brand-soft);
+  color: var(--c-brand);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+}
+
+/* ---------- 封禁名册 ---------- */
+.ban-card { margin-top: 16rpx; }
+.ban-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  border-bottom: 2rpx solid var(--c-fill);
+}
+.ban-card .ban-row:last-child { border-bottom: none; }
+.ban-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84rpx;
+  height: 84rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+  font-size: var(--fs-h2);
+  font-weight: 600;
+}
+.ban-main { flex: 1; min-width: 0; }
+.ban-name { font-size: var(--fs-body); font-weight: 600; color: var(--c-text); }
+.ban-college { font-size: var(--fs-aux); font-weight: 400; color: var(--c-muted); }
+.ban-reason { font-size: var(--fs-aux); color: var(--c-danger); margin-top: 4rpx; }
+.ban-time { font-size: var(--fs-tag); color: var(--c-faint); margin-top: 2rpx; }
+.ban-id { font-size: var(--fs-micro); color: var(--c-faint); margin-top: 2rpx; }
+.ban-op {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: var(--hit-sm);
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  border: 2rpx solid #e3e6ea;
+  background: var(--c-card);
+  color: var(--c-muted);
+  font-size: var(--fs-sub);
+}
+
+/* ---------- 审核员在场 / 引导卡 ---------- */
+.mod-brief {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+}
+/* 图标方块：浅灰底 + 线性 outline 图标，沿用「内容审核」入口行的约定 */
+.mod-brief__icon {
+  flex: none;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: var(--r-l);
+  background: var(--c-fill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mod-brief__icon-img { width: 44rpx; height: 44rpx; }
+.mod-brief__body { flex: 1; min-width: 0; }
+
+.auto-note {
+  background: #f1faf5;
+  border: 2rpx solid #cdebdc;
+}
+.auto-note__title {
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-campus-deep);
+  margin-bottom: 12rpx;
+}
+.auto-note__row {
+  font-size: var(--fs-aux);
+  color: #2b6b45;
+  line-height: 1.75;
+}
+.auto-note__hl { color: var(--c-campus-deep); font-weight: 600; }
+.auto-note__note {
+  margin-top: 12rpx;
+  padding-left: 16rpx;
+  border-left: 6rpx solid #a9dfc4;
+  font-size: var(--fs-tag);
+  color: #5f7a6c;
+  line-height: 1.7;
+}
+
+.setup-card .title-sm { margin-bottom: 16rpx; }
+.setup-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+.step-no {
+  flex: none;
+  width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  border-radius: var(--r-pill);
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+  font-size: var(--fs-micro);
+}
+.step-txt {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.6;
+}
+.setup-btn { margin-top: 20rpx; }
+.setup-id {
+  margin-top: 16rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+  word-break: break-all;
+  text-align: center;
+}
+
+.diag-card { background: var(--c-sunken); padding: 20rpx 24rpx; }
+.diag-line {
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.8;
+  word-break: break-all;
+}
+.diag-hint {
+  margin-top: 12rpx;
+  padding-top: 12rpx;
+  border-top: 2rpx dashed #e0e5ee;
+  font-size: var(--fs-tag);
+  color: #b07a12;
+  line-height: 1.7;
+}
+
+.guide-card {
+  background: #fff8ec;
+  border: 2rpx solid #f6e3bd;
+}
+.guide-card__title {
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-amber-deep);
+  margin-bottom: 12rpx;
+}
+.guide-card__row {
+  font-size: var(--fs-aux);
+  color: #7a5a1c;
+  line-height: 1.8;
+}
+.guide-card__row--dim { color: #a08a5a; margin-top: 8rpx; }
+
+.guide-more {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  padding: 0 8rpx;
+  margin-bottom: 24rpx;
+}
+.guide-more--hover { opacity: 0.72; }
+.guide-more__icon { width: 32rpx; height: 32rpx; flex: none; }
+
+.tip {
+  font-size: var(--fs-aux);
+  color: var(--c-amber-deep);
+  background: #fff8ec;
+  border: 2rpx solid #f6e3bd;
+  border-radius: var(--r-l);
+  padding: 20rpx 24rpx;
+  line-height: 1.7;
+  margin-bottom: 24rpx;
+}
+
+/* ---------- 举报队列卡片 ---------- */
+.rep-card { overflow: hidden; }
+
+.rep-card__head {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  margin-bottom: 16rpx;
+}
+
+/* 复选框：88rpx 热区 + 44rpx 视觉方框 */
+.rep-check {
+  flex: none;
+  width: 88rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -12rpx;
+}
+.rep-check__box {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: var(--r-m);
+  border: 2rpx solid #cfd6e2;
+  background: var(--c-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+.rep-check--on .rep-check__box {
+  background: var(--c-brand);
+  border-color: var(--c-brand);
+}
+.rep-check--hover { opacity: 0.72; }
+.rep-check__icon { width: 28rpx; height: 28rpx; }
+
+.rep-card__tags {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.rep-card__time {
+  margin-left: auto;
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+}
+
+.rep-card__body { font-size: var(--fs-sub); color: var(--c-text); line-height: 1.7; }
+.rep-card__who {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+}
+.rep-card__who-icon { width: 28rpx; height: 28rpx; flex: none; }
+.rep-card__title { margin-top: 8rpx; }
+.rep-card__desc { color: var(--c-muted); margin-top: 8rpx; }
+.rep-card__detail {
+  margin-top: 12rpx;
+  padding: 16rpx 20rpx;
+  background: var(--c-sunken);
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.65;
+}
+
+/* 证据图片：一行最多 3 张，lazy-load 沿用 JS 的分屏加载 */
+.rep-evidence {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  flex-wrap: wrap;
+}
+.rep-evidence__img {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+}
+
+.rep-ops {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  padding-top: 8rpx;
+}
+.op {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  border: 2rpx solid #e3e6ea;
+  background: var(--c-card);
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.op--hover { opacity: 0.72; }
+/* 通过 = 校园绿 #19A66A */
+.op--pass {
+  background: var(--c-campus-soft);
+  border-color: #bfe6d3;
+  color: var(--c-campus-deep);
+  font-weight: 600;
+}
+/* 驳回 = 危险色 #DD4B55 */
+.op--danger {
+  background: var(--c-danger-soft);
+  border-color: #f6ccd0;
+  color: var(--c-danger);
+  font-weight: 600;
+}
+
+/* 「封禁作者」比「确认违规」更重：实心底，和描边的确认违规拉开层级，
+   免得审核员手指一扫就把账号封了。点开之后还有一道带原因输入的确认弹窗 */
+.op--ban {
+  background: var(--c-danger);
+  border-color: var(--c-danger);
+  color: var(--c-on-strong);
+  font-weight: 600;
+}
+
+.bottom-note {
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+  line-height: 1.7;
+  padding: 8rpx 8rpx 20rpx;
+}
+.bottom-note__hl {
+  margin-top: 12rpx;
+  padding: 16rpx 20rpx;
+  border-radius: var(--r-l);
+  background: #fff8ec;
+  color: #7a5a1c;
+  border-left: 6rpx solid #f0d8a0;
+}
+
+/* ---------- 置顶管理 ---------- */
+.pin-card { margin-bottom: 0; }
+.pin-main { flex: 1; min-width: 0; }
+.pin-title {
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pin-meta {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 8rpx;
+  min-width: 0;
+}
+.pin-meta__icon { width: 26rpx; height: 26rpx; flex: none; }
+.pin-flag {
+  flex: none;
+  min-width: 120rpx;
+  height: 56rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-fill);
+  color: var(--c-muted);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pin-flag--on {
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+}
+.row--hover { background: var(--c-sunken); }
+
+/* ---------- 通知与数据 ---------- */
+.setup-btn-wrap { margin-bottom: 24rpx; }
+.cfg-card { background: var(--c-card); }
+.cfg-label {
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  margin-bottom: 16rpx;
+}
+.cfg-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: var(--fs-sub);
+  height: 88rpx;
+  padding: 0 24rpx;
+  background: var(--c-sunken);
+  border: 2rpx solid var(--c-line);
+  border-radius: var(--r-l);
+}
+.cfg-hint {
+  font-size: var(--fs-tag);
+  color: var(--c-campus-deep);
+  margin-top: 12rpx;
+}
+
+/* 词表是长文本，用输入框（88rpx 固定高）会把第二行以后全挡住 */
+.cfg-words {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: var(--fs-sub);
+  min-height: 160rpx;
+  padding: 20rpx 24rpx;
+  background: var(--c-sunken);
+  border: 2rpx solid var(--c-line);
+  border-radius: var(--r-l);
+  line-height: 1.7;
+}
+
+.cfg-words--ph {
+  color: var(--c-faint);
+}
+
+/* ---------- 底部批量操作条（position:fixed） ---------- */
+.batch-bar {
+  bottom: 0;
+  padding: 0 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, rgba(245, 247, 250, 0), var(--c-bg) 40%);
+}
+.batch-bar__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-xl);
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  box-shadow: 0 8rpx 24rpx rgba(23, 32, 51, 0.12);
+}
+.batch-bar__count {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.batch-bar__icon { width: 30rpx; height: 30rpx; }
+.batch-bar__ops {
+  display: flex;
+  gap: 16rpx;
+}
+.batch-btn {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--hit);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.batch-btn--hover { opacity: 0.72; }
+.batch-btn--off { opacity: 0.45; }
+/* 驳回 = 危险色 #DD4B55（主按钮实心 / 次按钮描边） */
+.batch-btn--danger {
+  background: var(--c-danger);
+  color: var(--c-on-strong);
+  box-shadow: 0 8rpx 24rpx rgba(221, 75, 85, 0.24);
+}
+.batch-btn--danger-ghost {
+  background: var(--c-card);
+  color: var(--c-danger);
+  border: 2rpx solid #f6ccd0;
+}
+
+/* ============ 留言申诉卡片 ============
+   和举报卡分开命名：两者长得很像，但一条是「有人举报」，一条是「作者不服」，
+   样式合并之后改一处会同时影响两个语境 */
+.ap-card__head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+.ap-card__who {
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.ap-card__time {
+  margin-left: auto;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.ap-card__quote {
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  line-height: 1.7;
+  padding-left: 16rpx;
+  border-left: 4rpx solid var(--c-line);
+  word-break: break-word;
+}
+.ap-card__imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+.ap-card__img {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: var(--r-m);
+  background: var(--c-fill);
+}
+.ap-card__meta {
+  margin-top: 12rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+}
+.ap-card__why {
+  margin-top: 4rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-text);
+  line-height: 1.7;
+  word-break: break-word;
+}
+.ap-card__act {
+  margin-top: 16rpx;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---------- 保护标记 ----------
+   比 pin-flag 小一号：它是状态，不是主操作。主操作仍然是右边那个「置顶」pill */
+.pin-guard {
+  flex: none;
+  margin-left: 8rpx;
+  height: 40rpx;
+  padding: 0 16rpx;
+  border-radius: var(--r-pill);
+  border: 1rpx solid var(--c-line);
+  color: var(--c-muted);
+  font-size: var(--fs-tag);
+  line-height: 38rpx;
+  text-align: center;
+}
+.pin-guard--on {
+  border-color: var(--c-brand);
+  color: var(--c-brand);
+}
+.pin-expire {
+  flex: none;
+  margin-left: 8rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-brand);
+}
+.pin-guarded-row { align-items: flex-start; }
+
+/* 置顶顺序：和普通置顶列表分开，避免上移/下移误触置顶开关 */
+.pin-order-card { padding: 24rpx 28rpx; }
+.pin-order-head { margin-bottom: 12rpx; }
+.pin-order-list { display: flex; flex-direction: column; gap: 8rpx; }
+.pin-order-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 80rpx;
+  padding: 0 12rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+}
+.pin-order-rank {
+  flex: 0 0 40rpx;
+  text-align: center;
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  color: var(--c-brand);
+}
+.pin-order-title { flex: 1; min-width: 0; font-size: var(--fs-sub); color: var(--c-text); }
+.pin-order-ops { display: flex; align-items: center; gap: 8rpx; flex-shrink: 0; }
+.pin-order-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+  color: var(--c-brand);
+  font-size: var(--fs-body);
+}
+.pin-order-btn--off { opacity: 0.3; }

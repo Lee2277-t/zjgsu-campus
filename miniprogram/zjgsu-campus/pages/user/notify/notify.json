@@ -1,0 +1,10 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "消息通知",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "app-header": "/components/ui/app-header/index",
+    "base-button": "/components/ui/base-button/index",
+    "empty-state": "/components/ui/empty-state/index"
+  }
+}

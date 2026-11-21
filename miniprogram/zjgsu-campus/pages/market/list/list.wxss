@@ -1,0 +1,198 @@
+/* pages/market/list/list.wxss —— 闲置 / 失物招领 列表
+   场景色：闲置橙 #F58A32 / 浅底 #FFF3E9 / 标签文字 #D9731F
+   只写本页语义类，通用的（.card / .tag--market / .skeleton / .pressable）都走 app.wxss */
+
+/* ---------- 吸顶：搜索 + 分类胶囊 ---------- */
+/* 整条筛选栏下移一点。加的是 padding 不是 margin —— 这一条是 position:sticky 的容器，
+   给它加 margin-top 会把「粘住的位置」也一起往下推，滚到顶时上方留出一条缝，
+   列表内容会从缝里穿过去；padding 只把内容往下推，背景条照旧盖满到顶 */
+.mk-filter { padding-top: 12rpx; }
+/* 类型胶囊和搜索框之间要留出气口：原来 16rpx，88rpx 高的胶囊顶边几乎压住
+   搜索框的下阴影，两行看着像同一个控件里挤出来的两层。
+   现在 24rpx（12px），是「略微下移」而不是另起一段 ——
+   再大就会让搜索框和胶囊看起来分属两个区块，和别的页面不一致 */
+.list-pill { margin-top: 24rpx; }
+/* 分类那一行紧跟类型胶囊，属于同一组筛选，间距比两组之间小一半 */
+.list-pill--cat { margin-top: 16rpx; }
+
+.search-bar__icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
+.search-bar__input { flex: 1; min-width: 0; font-size: var(--fs-body); }
+.search-bar__clear { padding: 0 12rpx; }
+.search-bar__clear-icon { width: 32rpx; height: 32rpx; }
+
+/* ---------- 学习资料共享入口卡 ---------- */
+.res-entry {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 24rpx 0;
+  padding: 24rpx 28rpx;
+  border-radius: var(--r-xl);
+  background: var(--c-market-soft);
+  box-shadow: 0 8rpx 24rpx rgba(245, 138, 50, 0.1);
+}
+.res-entry--hover { opacity: 0.72; }
+.res-entry__icon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: var(--r-l);
+  background: var(--c-market);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.res-entry__icon image { width: 44rpx; height: 44rpx; }
+.res-entry__body { flex: 1; min-width: 0; }
+.res-entry__title { font-size: var(--fs-body); font-weight: 600; color: var(--c-text); }
+.res-entry__sub {
+  margin-top: 4rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.res-entry__go { flex-shrink: 0; font-size: var(--fs-aux); font-weight: 600; color: var(--c-market-deep); }
+.res-entry__chevron { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+
+/* ---------- 我发布的入口 ---------- */
+.my-entry {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-height: 96rpx;
+  padding: 20rpx 28rpx;
+  margin-bottom: 24rpx;
+  border-radius: var(--r-xl);
+  background: var(--c-card);
+  box-shadow: var(--sh-1);
+}
+.my-entry--hover { opacity: 0.72; }
+.my-entry__icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
+.my-entry__title { flex: 1; min-width: 0; font-size: var(--fs-body); font-weight: 600; }
+.my-entry__go { flex-shrink: 0; font-size: var(--fs-aux); color: var(--c-muted); }
+.my-entry__chevron { width: 28rpx; height: 28rpx; flex-shrink: 0; }
+
+/* ---------- 信息墙标题 ---------- */
+.wall-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+/* ---------- 骨架屏 ---------- */
+.sk-wrap { margin-bottom: 24rpx; }
+.sk-card {
+  background: var(--c-card);
+  border-radius: var(--r-xl);
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+}
+.sk-line { margin-bottom: 16rpx; }
+.sk-title { width: 55%; height: 30rpx; }
+.sk-short { width: 35%; }
+.sk-mid { width: 80%; margin-bottom: 0; }
+
+/* ---------- 空状态：牛皮纸袋 ---------- */
+.empty-bag { padding: 12rpx 0 32rpx; }
+.empty-bag__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 32rpx 48rpx;
+  border-radius: var(--r-xl);
+  background: var(--c-card);
+  box-shadow: var(--sh-1);
+}
+.empty-bag__img { width: 400rpx; height: 340rpx; }
+.empty-bag__title { margin-top: 8rpx; font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); }
+.empty-bag__desc {
+  margin-top: 12rpx;
+  max-width: 440rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+.empty-bag__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  margin-top: 32rpx;
+  padding: 0 48rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-market);
+  color: var(--c-on-strong);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(245, 138, 50, 0.22);
+}
+.empty-bag__cta--hover { opacity: 0.72; }
+.empty-bag__cta-icon { width: 32rpx; height: 32rpx; }
+
+/* ---------- 信息墙卡片 ---------- */
+.m-item { padding: 28rpx; }
+.m-item--hover { opacity: 0.72; }
+
+.m-item__top { display: flex; align-items: center; gap: 12rpx; margin-bottom: 16rpx; }
+.m-item__kind { display: inline-flex; align-items: center; gap: 8rpx; }
+.m-item__kind-icon { width: 24rpx; height: 24rpx; }
+.m-item__state {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+  background: var(--c-fill);
+  padding: 8rpx 16rpx;
+  border-radius: var(--r-pill);
+}
+.m-item__state--mine { color: var(--c-on-strong); background: var(--c-market); }
+
+.m-item__title { font-size: var(--fs-h2); font-weight: 600; line-height: 1.45; color: var(--c-text); }
+.m-item__course {
+  display: inline-block;
+  margin-top: 12rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-brand-deep);
+  background: var(--c-brand-soft);
+  padding: 8rpx 16rpx;
+  border-radius: var(--r-pill);
+}
+.m-item__desc { margin-top: 12rpx; font-size: var(--fs-sub); color: var(--c-muted); line-height: 1.6; }
+
+.m-item__imgs { display: flex; gap: 12rpx; margin-top: 20rpx; }
+.m-item__img {
+  width: 160rpx;
+  height: 160rpx;
+  flex-shrink: 0;
+  border-radius: var(--r-m);
+  background: #f4f5f7;
+}
+
+.m-item__foot { display: flex; align-items: center; gap: 16rpx; margin-top: 20rpx; }
+.m-item__loc { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8rpx; font-size: var(--fs-tag); color: var(--c-faint); }
+.m-item__loc image { width: 24rpx; height: 24rpx; flex-shrink: 0; }
+.m-item__loc text { min-width: 0; }
+.m-item__price { flex-shrink: 0; font-size: var(--fs-h2); font-weight: 700; color: var(--c-market); }
+.m-item__time { flex-shrink: 0; }
+
+.load-end { text-align: center; color: var(--c-faint); font-size: var(--fs-aux); padding: 16rpx 0 140rpx; }
+
+/* ---------- 悬浮发布按钮（.fab 只是固定壳，尺寸在本页补全） ---------- */
+.ml-fab {
+  bottom: calc(32rpx + env(safe-area-inset-bottom));
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-market);
+  box-shadow: 0 10rpx 28rpx rgba(245, 138, 50, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ml-fab--hover { opacity: 0.72; }
+.ml-fab__icon { width: 48rpx; height: 48rpx; }

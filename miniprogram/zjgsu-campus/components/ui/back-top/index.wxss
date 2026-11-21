@@ -1,0 +1,20 @@
+.back-top {
+  position: fixed;
+  right: 32rpx;
+  z-index: 45;
+  width: 92rpx;
+  height: 92rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  box-shadow: var(--sh-3);
+  color: var(--c-muted);
+  font-size: 20rpx;
+}
+.back-top--hover { opacity: 0.72; }
+.back-top__icon { width: 30rpx; height: 30rpx; }

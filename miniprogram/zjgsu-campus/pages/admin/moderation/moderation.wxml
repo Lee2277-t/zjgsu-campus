@@ -1,0 +1,671 @@
+<!-- pages/admin/moderation/moderation.wxml —— 内容审核
+     举报队列 / 证据核对 / 批量处理 / 置顶管理 / 通知与数据
+     视觉规格见 docs/native-ui-contract.md：
+       · 举报卡片圆角 32rpx（.card），内层 24rpx（.inner）
+       · 驳回 = 危险色 #DD4B55，通过 = 校园绿 #19A66A
+       · 底部批量条 position:fixed（容器链路上绝不能出现 transform）
+     云函数调用参数、分页/懒加载一律沿用 moderation.js，这里只改渲染。 -->
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="内容审核" showBack />
+
+<view class="container mod-page">
+
+  <!-- 分区切换：320 / 375 / 430 都不挤，短文案 + 26rpx -->
+  <view class="sticky-filter">
+    <view class="segmented">
+      <view
+        class="segmented-item {{tab === 'reports' ? 'segmented-item-on' : ''}}"
+        data-tab="reports"
+        bindtap="switchTab"
+        hover-class="seg-item--hover"
+        hover-stay-time="80"
+      >
+        <text class="seg-label">举报{{pending ? ' (' + pending + ')' : ''}}</text>
+      </view>
+      <view
+        class="segmented-item {{tab === 'pin' ? 'segmented-item-on' : ''}}"
+        data-tab="pin"
+        bindtap="switchTab"
+        hover-class="seg-item--hover"
+        hover-stay-time="80"
+      >
+        <text class="seg-label">置顶{{pinnedCount ? ' (' + pinnedCount + ')' : ''}}</text>
+      </view>
+      <view
+        class="segmented-item {{tab === 'notice' ? 'segmented-item-on' : ''}}"
+        data-tab="notice"
+        bindtap="switchTab"
+        hover-class="seg-item--hover"
+        hover-stay-time="80"
+      >
+        <text class="seg-label">通知</text>
+      </view>
+      <view
+        class="segmented-item {{tab === 'ban' ? 'segmented-item-on' : ''}}"
+        data-tab="ban"
+        bindtap="switchTab"
+        hover-class="seg-item--hover"
+        hover-stay-time="80"
+      >
+        <text class="seg-label">封禁{{banList.length ? ' (' + banList.length + ')' : ''}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ==================== 举报队列 ==================== -->
+  <block wx:if="{{tab === 'reports'}}">
+
+    <!-- 待处理 / 已处置。不新开顶部分区：顶部已经四段，320px 上加第五段就换行了 -->
+    <view wx:if="{{isMod}}" class="segmented mod-subseg">
+      <view
+        class="segmented-item {{view === 'pending' ? 'segmented-item-on' : ''}}"
+        data-view="pending"
+        bindtap="switchView"
+        hover-class="seg-item--hover"
+        hover-stay-time="80"
+      >待处理{{pending ? ' (' + pending + ')' : ''}}</view>
+      <view
+        class="segmented-item {{view === 'archive' ? 'segmented-item-on' : ''}}"
+        data-view="archive"
+        bindtap="switchView"
+        hover-class="seg-item--hover"
+        hover-stay-time="80"
+      >已处置</view>
+    </view>
+
+    <!-- ---------------- 已处置归档 ---------------- -->
+    <block wx:if="{{view === 'archive'}}">
+      <view class="card guide-card">
+        <view class="guide-card__row">处置完的记录会从待处理里消失，全在这一屏。被追问「你们凭什么删我的帖」时，这里是唯一的凭据。</view>
+        <view class="guide-card__row">只留标题和正文开头 —— 确认违规之后内容是真删掉的，删完就只剩这份快照。早期记录没有快照，会标出来。</view>
+      </view>
+
+      <view class="chip-row arc-scope">
+        <view class="chip {{archiveScope === 'all' ? 'chip-on' : ''}}" data-scope="all" bindtap="onArchiveScope">全部</view>
+        <view class="chip {{archiveScope === 'confirmed' ? 'chip-on' : ''}}" data-scope="confirmed" bindtap="onArchiveScope">已确认</view>
+        <view class="chip {{archiveScope === 'rejected' ? 'chip-on' : ''}}" data-scope="rejected" bindtap="onArchiveScope">已驳回</view>
+      </view>
+
+      <view wx:if="{{archiveLoading}}" class="tip">读取中…</view>
+      <empty-state
+        wx:elif="{{archive.length === 0}}"
+        icon="shield-check"
+        iconColor="faint"
+        title="还没有处置记录"
+        description="驳回或确认违规之后，记录会落到这里"
+      />
+
+      <view wx:for="{{archive}}" wx:key="gkey" wx:for-item="a" class="card rep-card">
+        <view class="rep-card__head">
+          <view class="rep-card__tags">
+            <text class="tag {{a.confirmed ? 'tag--danger' : 'tag--gray'}}">{{a.statusText}}</text>
+            <text wx:if="{{a.reportCount}}" class="tag tag--gray">{{a.reportCount}} 人举报</text>
+            <text class="rep-card__time">{{a.time}}</text>
+          </view>
+        </view>
+        <view class="rep-card__body">
+          <view class="rep-card__who {{a.targetOpenid ? 'tap' : ''}}" data-item="{{a}}" catchtap="openReportedUser">
+            <text class="label">
+              {{a.targetType === 'resource' ? '学习资料' : (a.targetType === 'review' ? '课程评价' : (a.targetType === 'comment' ? '留言' : (a.targetType === 'market' ? '闲置' : (a.targetType === 'event' ? '活动' : (a.targetType === 'chat' ? '私信' : (a.targetType === 'profile' ? '名片' : '论坛帖子'))))))}}{{a.reasons.length > 1 ? ' · ' + a.reasons.length + ' 种举报理由' : ''}}
+            </text>
+          </view>
+          <view wx:if="{{a.title}}" class="body-text strong clamp2 rep-card__title">{{a.title}}</view>
+          <view wx:else class="rep-card__desc">（早期记录，没有留下内容快照）</view>
+          <view wx:if="{{a.desc}}" class="rep-card__desc">{{a.desc}}</view>
+          <view class="rep-card__detail inner">举报理由：{{a.reason}}</view>
+        </view>
+        <view wx:if="{{a.targetOpenid}}" class="rep-ops">
+          <view class="op" data-item="{{a}}" catchtap="openReportedUser" hover-class="op--hover" hover-stay-time="80">查看主页</view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:else>
+
+    <!-- 已进审核员名单：日常只需要底部那条「全部驳回」 -->
+    <view wx:if="{{isMod}}" class="card mod-brief">
+      <view class="mod-brief__icon">
+        <image class="mod-brief__icon-img" src="/assets/icons/shield-check--campus.svg" mode="aspectFit" />
+      </view>
+      <view class="mod-brief__body">
+        <view class="title-sm">你是审核员，一键清完就收工</view>
+        <view class="muted">举报会先自动处置一轮，只有系统拿不准的才留到下面。</view>
+      </view>
+    </view>
+
+    <view wx:if="{{isMod}}" class="card auto-note">
+      <view class="auto-note__title">自动处置规则（这部分不用你判）</view>
+      <view class="auto-note__row">
+        门槛按这条内容<text class="auto-note__hl">有几个人看过</text>分档，看得越多越难被下架：
+      </view>
+      <view class="auto-note__row">0-49 人看过 → <text class="auto-note__hl">3 人</text>举报先暂停展示</view>
+      <view class="auto-note__row">50-199 人看过 → <text class="auto-note__hl">5 人</text>举报先暂停展示</view>
+      <view class="auto-note__row">200-499 人看过 → <text class="auto-note__hl">7 人</text>举报先暂停展示</view>
+      <view class="auto-note__row">500 人以上看过 → <text class="auto-note__hl">10 人</text>举报先暂停展示</view>
+      <view class="auto-note__row">
+        <text class="auto-note__hl">系统只下架，不删除。</text>删不删由你判 —— 删除不可逆，
+        而被误删的原文正是作者申诉、被举报人举证时唯一的凭据
+      </view>
+      <view class="auto-note__note">
+        这里的「人」是人数，不是次数：一个人对同一条内容只算一票，换个理由重投也不会多一票
+        —— 否则一个人点三次就能把任何内容推过门槛。
+      </view>
+      <view class="auto-note__note">
+        浏览量只算不同的人，作者的浏览不计入；没有浏览量数据时一律按最低档 3 人。
+        留言没有「暂停展示」这一档，所以留言举报只进队列，系统不动手。
+      </view>
+      <view class="auto-note__note">
+        已经处置完的不会留在下面，去上面「已处置」里看。被暂停展示的内容也不会从全校消失 ——
+        论坛列表顶部「因举报暂停展示」就是它们的入口。
+      </view>
+    </view>
+
+    <!-- 成为审核员只能在服务端配名单 -->
+    <view wx:else class="card setup-card">
+      <view class="title-sm">成为审核员</view>
+      <view class="setup-step">
+        <text class="step-no">1</text>
+        <text class="step-txt">把下面这个身份 ID 填进云函数「user」的环境变量 MODERATORS，多个用英文逗号隔开</text>
+      </view>
+      <view class="setup-step">
+        <text class="step-no">2</text>
+        <text class="step-txt">重新进一次本页就成了。真上线之后建议只填你自己一个 ID</text>
+      </view>
+      <base-button
+        class="setup-btn"
+        variant="primary"
+        size="lg"
+        block
+        bind:tap="onCopyOpenid"
+      >{{myOpenid ? '复制我的身份 ID' : '还没拿到身份，等一秒再点'}}</base-button>
+      <view class="setup-id">当前身份 ID：{{myOpenid || '读取中…'}}</view>
+
+      <!-- 两边判定分开摆：不一致 = 环境变量没生效；一致但不认 = ID 本身配错了 -->
+      <view class="card card--flat diag-card inner">
+        <view class="diag-line">
+          前端名单（config.js）：
+          <text class="{{localOk ? 'text-campus' : 'text-danger'}}">{{localOk ? '有你' : '没有你'}}</text>
+        </view>
+        <view class="diag-line">
+          云函数（环境变量）：
+          <text class="{{isMod ? 'text-campus' : 'text-danger'}}">{{diagDone ? (isMod ? '认你' : '不认你') : '检查中…'}}</text>
+        </view>
+        <view wx:if="{{diagHint}}" class="diag-hint">{{diagHint}}</view>
+      </view>
+    </view>
+
+    <!-- 环境自检缺了什么：说人话，别让人对着报错猜 -->
+    <view wx:if="{{needSetup && setupSteps.length}}" class="card guide-card">
+      <view class="guide-card__title">还需要你在控制台点几下（照着做，两分钟）</view>
+      <view wx:for="{{setupSteps}}" wx:key="*this" class="guide-card__row">{{item}}</view>
+      <view class="guide-card__row guide-card__row--dim">
+        建集合：开发者工具 → 云开发 → 数据库 → 点「+」→ 输集合名 → 权限选「所有用户可读，仅创建者可写」→ 确定 → 回来下拉刷新
+      </view>
+    </view>
+
+    <view wx:if="{{needSetup && setupSteps.length === 0 && !isMod}}" class="card guide-card">
+      <view class="guide-card__title">云函数可能还没部署</view>
+      <view class="guide-card__row">
+        在开发者工具里右键 cloudfunctions\user →「上传并部署：云端安装依赖」，等提示部署成功后，回来下拉刷新这个页面。
+      </view>
+    </view>
+
+    <view wx:if="{{tip}}" class="tip">{{tip}}</view>
+
+    <!-- 留言申诉：自动处置的对手方。
+         放在举报队列上面是因为它有时效（7 天窗口），而且条数通常很少 ——
+         沉到队列底下就永远没人看了 -->
+    <block wx:if="{{appeals.length}}">
+      <view class="card mod-brief">
+        <view class="mod-brief__icon">
+          <image class="mod-brief__icon-img" src="/assets/icons/shield-check--campus.svg" mode="aspectFit" />
+        </view>
+        <view class="mod-brief__body">
+          <view class="title-sm">{{appeals.length}} 条留言申诉待处理</view>
+          <view class="muted">作者认为自动删除判错了。看一遍原文，判错的点「恢复」。</view>
+        </view>
+      </view>
+
+      <view wx:for="{{appeals}}" wx:key="commentId" wx:for-item="a" class="card ap-card">
+        <view class="ap-card__head">
+          <text class="ap-card__who">{{a.author || '同学'}}</text>
+          <text class="ap-card__time">{{a.time}}</text>
+        </view>
+        <view class="ap-card__quote">“{{a.content || '（纯图片留言）'}}”</view>
+        <view wx:if="{{a.images.length}}" class="ap-card__imgs">
+          <image wx:for="{{a.images}}" wx:for-item="img" wx:key="*this"
+                 class="ap-card__img img-fb" src="{{img}}" mode="aspectFill" lazy-load />
+        </view>
+        <view class="ap-card__meta">被移除原因：{{a.removedReason || '违规'}}</view>
+        <view class="ap-card__why">申诉理由：{{a.reason}}</view>
+        <view class="ap-card__act">
+          <base-button size="sm" variant="ghost" data-id="{{a.commentId}}"
+                       bindtap="onRestoreAppeal">恢复这条留言</base-button>
+        </view>
+      </view>
+    </block>
+
+    <empty-state
+      wx:if="{{isMod && queue.length === 0}}"
+      icon="shield-check"
+      iconColor="campus"
+      title="队列已清空"
+      description="这段时间不需要人工介入。"
+      actionLabel="刷新队列"
+      bind:action="loadQueue"
+    />
+
+    <!-- 举报队列卡片：一条内容一行（不是一张票一行） -->
+    <view wx:for="{{queue}}" wx:key="gkey" wx:for-item="item" class="card rep-card">
+      <view class="rep-card__head">
+        <!-- 88rpx 热区，中间 44rpx 是视觉方框，选中态换成主色填充。
+             勾选单位是「这一条内容」：勾上就等于把它压着的几张票一起交上去 -->
+        <view
+          class="rep-check {{checkedMap[item.gkey] ? 'rep-check--on' : ''}}"
+          data-key="{{item.gkey}}"
+          catchtap="toggleCheck"
+          hover-class="rep-check--hover"
+          hover-stay-time="80"
+        >
+          <view class="rep-check__box">
+            <image
+              wx:if="{{checkedMap[item.gkey]}}"
+              class="rep-check__icon"
+              src="/assets/icons/check--white.svg"
+              mode="aspectFit"
+            />
+          </view>
+        </view>
+
+        <view class="rep-card__tags">
+          <text class="tag tag--danger">{{item.reason}}</text>
+          <text wx:if="{{item.reasons.length > 1}}" class="tag tag--gray">{{item.reasons.length}} 种理由</text>
+          <text wx:if="{{item.reviewOnly}}" class="tag tag--market">{{abuseBadge || '观察期'}}</text>
+          <text wx:if="{{item.reportCount}}" class="tag tag--gray">{{item.reportCount}} 人举报</text>
+          <!-- 「差几个人」是这个队列里最该先看的数字：它决定现在要不要动手。
+               门槛不是固定的 3 人 —— 它按这条内容的独立浏览人数分档
+               （0-49 看 3 人、50-199 看 5 人、200-499 看 7 人、500+ 看 10 人），
+               所以要把分母一起显示出来：差 3 人 / 900 人看过，和差 3 人 / 12 人看过，
+               是完全两回事。被保护的内容不会自动下架，那种情况不显示（显示就是骗人） -->
+          <text wx:if="{{item.needMore > 0 && !item.guarded}}" class="tag tag--gray">差 {{item.needMore}} 人（{{item.views}} 人看过 · 门槛 {{item.hideAt}} 人）</text>
+          <text class="rep-card__time">{{item.time}}</text>
+        </view>
+      </view>
+
+      <view class="rep-card__body">
+        <view class="rep-card__who {{item.targetOpenid ? 'tap' : ''}}" data-item="{{item}}" catchtap="openReportedUser">
+          <image class="rep-card__who-icon" src="/assets/icons/file-text--muted.svg" mode="aspectFit" />
+          <text class="muted truncate">{{item.targetNick}}</text>
+          <text class="label">
+            {{item.targetType === 'resource' ? '学习资料' : (item.targetType === 'review' ? '课程评价' : (item.targetType === 'comment' ? '留言' : (item.targetType === 'market' ? '闲置' : (item.targetType === 'event' ? '活动' : '论坛帖子'))))}}{{item.board ? ' · ' + item.board : ''}}
+          </text>
+        </view>
+
+        <view wx:if="{{item.title}}" class="body-text strong clamp2 rep-card__title">{{item.title}}</view>
+        <view class="rep-card__desc">{{item.desc}}</view>
+        <view wx:if="{{item.detail}}" class="rep-card__detail inner">举报说明：{{item.detail}}</view>
+
+        <!-- 证据图片：接口给了图就横向排，图走 lazy-load，不进首屏就不下载。
+             ⚠️ evidence 只能是 URL 字符串数组 —— 直接当 src 用。
+             举报「人」那条链路的快照是对象数组（{from,text,time}），走的是上面的 desc 文本，
+             云侧字段名叫 personEvidence，别再塞回 evidence（塞了这里就渲染成一块碎图）。 -->
+        <view wx:if="{{item.evidence && item.evidence.length > 0}}" class="rep-evidence">
+          <image show-menu-by-longpress
+            wx:for="{{item.evidence}}"
+            wx:for-item="src"
+            wx:key="*this"
+            class="rep-evidence__img img-fb"
+            src="{{src}}"
+            mode="aspectFill"
+            lazy-load
+          />
+        </view>
+      </view>
+
+      <view class="rep-ops">
+        <!-- 保护：把「几个人凑人数就能删」这条闸关掉，交给人工。
+             这是唯一能挡住自动处置的手段，所以直接摆在操作行里，
+             而不是藏进二级菜单 —— 审核员看到一条正常招新群被举报时，
+             第一反应应该是「护住它」，而不是删掉 -->
+        <view
+          wx:if="{{item.targetType === 'comment' || item.targetType === 'post'}}"
+          class="op {{item.guarded ? 'op--pass' : ''}}"
+          data-type="{{item.targetType}}"
+          data-id="{{item.targetId}}"
+          data-on="{{item.guarded ? '0' : '1'}}"
+          catchtap="toggleProtect"
+          hover-class="op--hover"
+          hover-stay-time="80"
+        >{{item.guarded ? '已保护' : '保护'}}</view>
+        <view
+          wx:if="{{item.contentStatus === 'hidden'}}"
+          class="op op--pass"
+          data-item="{{item}}"
+          catchtap="restoreOne"
+          hover-class="op--hover"
+          hover-stay-time="80"
+        >通过并恢复展示</view>
+        <view
+          class="op"
+          data-key="{{item.gkey}}"
+          catchtap="toggleCheck"
+          hover-class="op--hover"
+          hover-stay-time="80"
+        >{{checkedMap[item.gkey] ? '取消勾选' : '勾选驳回'}}</view>
+        <view
+          class="op op--danger"
+          data-item="{{item}}"
+          catchtap="confirmOne"
+          hover-class="op--hover"
+          hover-stay-time="80"
+        >确认违规</view>
+        <view
+          wx:if="{{item.targetOpenid}}"
+          class="op"
+          data-item="{{item}}"
+          catchtap="openReportedUser"
+          hover-class="op--hover"
+          hover-stay-time="80"
+        >查看主页</view>
+        <!-- 卖片这类内容删一条他再发一条，所以给审核员一把更彻底的钥匙：
+             直接把这个账号停掉。只有认得出作者身份时才显示 -->
+        <view
+          wx:if="{{item.targetOpenid}}"
+          class="op op--ban"
+          data-item="{{item}}"
+          catchtap="banFromReport"
+          hover-class="op--hover"
+          hover-stay-time="80"
+        >封禁作者</view>
+      </view>
+    </view>
+
+    <view wx:if="{{isMod && queue.length > 0}}" class="bottom-note">
+      勾选后可用底部「驳回已选」批量清掉同一条内容的所有举报。默认「全部驳回」最省事，
+      只有确实违规的才用卡片上的「确认违规」。
+      <view wx:if="{{hasAbuse}}" class="bottom-note__hl">
+        带「{{abuseBadge || '观察期'}}」标签的这几条来自正在观察期的同学 ——
+        系统没拿它们自动处置过，是等你自己判的。驳回会计数，但只要有一条你判「确认违规」，
+        他的观察期当场就解除了，不用一直背着。
+      </view>
+    </view>
+    </block>
+  </block>
+
+  <!-- ==================== 置顶管理 ==================== -->
+  <block wx:if="{{tab === 'pin'}}">
+    <view class="sec-title">
+      <text>置顶帖子</text>
+      <text class="sec-sub">最多同时 10 条，置顶帖在所有排序里都排最前</text>
+    </view>
+
+    <!-- 帖子多了以后，靠翻列表找置顶目标并不现实。
+         关键词走论坛同一套模糊搜索（标题 / 正文 / 板块 / 作者任一命中，打错字也认），
+         搜的范围是全量帖子，不受下面「最近 30 条」的限制 -->
+    <view class="search-bar mod-search">
+      <image class="mod-search__icon" src="/assets/icons/search--muted.svg" mode="aspectFit" />
+      <input class="mod-search__input" placeholder="搜帖子：标题 / 正文 / 板块 / 作者，可模糊"
+             value="{{pinKeyword}}" bindinput="onPinKeyword" confirm-type="search" />
+      <view wx:if="{{pinKeyword}}" class="mod-search__do tap" bindtap="clearPinKeyword">清空</view>
+    </view>
+    <view wx:if="{{pinKeyword}}" class="tip">
+      搜到 {{pinList.length}} 条，点任意一条即可置顶 / 取消置顶
+    </view>
+
+    <view wx:if="{{!isMod && myOpenid}}" class="setup-btn-wrap">
+      <base-button variant="secondary" block bind:tap="onCopyOpenid">复制我的身份 ID，填进 MODERATORS</base-button>
+    </view>
+    <!-- 置顶顺序：管理员按第 1 位、第 2 位直接调整上下顺序，论坛置顶档按这里展示。 -->
+    <view wx:if="{{isMod && pinnedOrder.length}}" class="card pin-order-card">
+      <view class="sec-title pin-order-head">
+        <text>置顶顺序</text>
+        <text class="sec-sub">从上到下</text>
+      </view>
+      <view class="pin-order-list">
+        <view wx:for="{{pinnedOrder}}" wx:key="id" wx:for-item="op" wx:for-index="oi" class="pin-order-row">
+          <text class="pin-order-rank">{{oi + 1}}</text>
+          <text class="pin-order-title truncate">{{op.title}}</text>
+          <view class="pin-order-ops">
+            <view class="pin-order-btn {{oi === 0 ? 'pin-order-btn--off' : ''}}" data-id="{{op.id}}" data-delta="-1" catchtap="movePin">↑</view>
+            <view class="pin-order-btn {{oi === pinnedOrder.length - 1 ? 'pin-order-btn--off' : ''}}" data-id="{{op.id}}" data-delta="1" catchtap="movePin">↓</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{isMod && !pinList.length}}" class="card guide-card">
+      <view class="guide-card__row">{{pinKeyword ? '没搜到相关帖子，换个关键词试试。' : '本地还没有帖子缓存，先切回「举报」或者进一次论坛。'}}</view>
+    </view>
+
+    <view class="card card--flush pin-card">
+      <view wx:for="{{pinList}}" wx:key="id" wx:for-item="item" class="row pressable" data-id="{{item.id}}" catchtap="togglePin">
+        <view class="pin-main">
+          <view class="pin-title">{{item.title}}</view>
+          <view class="pin-meta">
+            <image class="pin-meta__icon" src="/assets/icons/message-square--faint.svg" mode="aspectFit" />
+            <text class="muted truncate">{{item.board}} · {{item.time}}</text>
+            <image class="pin-meta__icon" src="/assets/icons/thumbs-up--faint.svg" mode="aspectFit" />
+            <text class="label">{{item.likes}}</text>
+            <image class="pin-meta__icon" src="/assets/icons/message-square--faint.svg" mode="aspectFit" />
+            <text class="label">{{item.comments}}</text>
+            <!-- 到期时间：只写「已置顶」看不出还剩几天，看不见期限就没人去续 -->
+            <text wx:if="{{item.pinText}}" class="pin-expire">{{item.pinText}}</text>
+            <!-- 保护开关挂在行里：护住一条好帖是运营最常用的动作，
+                 不该为了它另开一个分区 -->
+            <view
+              class="pin-guard {{item.guarded ? 'pin-guard--on' : ''}}"
+              data-type="post"
+              data-id="{{item.id}}"
+              data-on="{{item.guarded ? '0' : '1'}}"
+              catchtap="toggleProtect"
+            >{{item.guarded ? '已保护' : '保护'}}</view>
+          </view>
+        </view>
+        <view class="pin-flag {{item.pinned ? 'pin-flag--on' : ''}}">
+          {{item.pinned ? '已置顶' : '置顶'}}
+        </view>
+      </view>
+    </view>
+
+    <!-- 已保护的内容：这是「保护」唯一的总入口，也是唯一能解除的地方。
+         帖子和留言混排 —— 对运营来说它们只是一件事：这条我护着了 -->
+    <view wx:if="{{protect.length}}" class="sec-title">
+      <text>已保护（{{protect.length}}）</text>
+      <text class="sec-sub">举报会留痕，但不会进入普通审核队列</text>
+    </view>
+    <view wx:if="{{protect.length}}" class="card card--flush pin-card">
+      <view wx:for="{{protect}}" wx:key="targetId" wx:for-item="g" class="row pin-guarded-row">
+        <view class="pin-main">
+          <view class="pin-title">{{g.title || '（无标题）'}}</view>
+          <view class="pin-meta">
+            <text class="label">{{g.targetType === 'comment' ? '留言' : '帖子'}}</text>
+            <text class="muted truncate">{{g.author || '某位同学'}}{{g.reason ? ' · ' + g.reason : ''}}</text>
+          </view>
+        </view>
+        <view
+          class="pin-guard pin-guard--on"
+          data-type="{{g.targetType}}"
+          data-id="{{g.targetId}}"
+          data-on="0"
+          catchtap="toggleProtect"
+        >解除</view>
+      </view>
+    </view>
+
+    <view wx:if="{{isMod}}" class="bottom-note">置顶是运营位，别贪多：最多 10 条，多了学生反而不点。</view>
+  </block>
+
+  <!-- ==================== 账号封禁 ==================== -->
+  <block wx:if="{{tab === 'ban'}}">
+    <view class="sec-title">
+      <text>账号封禁</text>
+      <text class="sec-sub">封禁后该账号不能再发帖 / 评论 / 私信 / 互动，浏览不受影响</text>
+    </view>
+
+    <view wx:if="{{!isMod}}" class="card guide-card">
+      <view class="guide-card__title">封号只有审核员能做</view>
+      <view class="guide-card__row">
+        云函数里会再验一次身份（环境变量 MODERATORS）。把下面这串身份 ID 填进去并重新部署 user 云函数即可。
+      </view>
+      <base-button class="setup-btn" variant="primary" block bind:tap="onCopyOpenid">
+        {{myOpenid ? '复制我的身份 ID' : '还没拿到身份，等一秒再点'}}
+      </base-button>
+      <view class="setup-id">当前身份 ID：{{myOpenid || '读取中…'}}</view>
+    </view>
+
+    <block wx:else>
+      <view class="card auto-note">
+        <view class="auto-note__title">什么时候该封号，而不是删帖</view>
+        <view class="auto-note__row">
+          卖片、代写、拉群招生这类内容的根子不在某一条帖子上，而在账号本身 ——
+          <text class="auto-note__hl">删一条他再发一条，删帖永远追不上</text>。这种就该封号。
+        </view>
+        <view class="auto-note__row">只是单条内容不合适（说话难听、发错板块）→ 删帖 / 下架就够，别动账号。</view>
+        <view class="auto-note__row">封禁是账号级的，审核员之间不能互相封；封错了随时可以在这里解封。</view>
+      </view>
+
+      <view class="card guide-card">
+        <view class="guide-card__row">封禁入口：① 举报卡片点作者名或「查看主页」，进入名片页后可封禁；② 举报卡片上直接点「封禁作者」；③ 下面名册里手动填 ID。</view>
+      </view>
+
+      <empty-state wx:if="{{!banLoading && banList.length === 0}}" icon="shield-check" iconColor="campus"
+        title="还没有封禁任何账号" description="需要封号时，去举报队列点那张卡片上的「封禁作者」" />
+
+      <view wx:if="{{banList.length > 0}}" class="search-bar mod-search">
+        <image class="mod-search__icon" src="/assets/icons/search--muted.svg" mode="aspectFit" />
+        <input class="mod-search__input" placeholder="搜封禁名册：昵称 / 学院 / 理由 / 身份 ID"
+               value="{{banKeyword}}" bindinput="onBanKeyword" confirm-type="search" />
+      </view>
+      <view wx:if="{{banKeyword}}" class="tip">在 {{banList.length}} 个已封账号里找到 {{banView.length}} 个</view>
+
+      <view class="card card--flush ban-card" wx:for="{{banView}}" wx:key="openid" wx:for-item="b">
+        <view class="ban-row">
+          <view class="ban-avatar">{{b.avatarText}}</view>
+          <view class="ban-main">
+            <view class="ban-name truncate">{{b.nickName}}<text wx:if="{{b.college}}" class="ban-college"> · {{b.college}}</text></view>
+            <view class="ban-reason truncate">理由：{{b.reason || '未填写'}}</view>
+            <view class="ban-time">{{b.atText ? '封禁于 ' + b.atText : ''}}</view>
+            <view class="ban-id truncate">{{b.openid}}</view>
+          </view>
+          <view class="ban-op tap" data-openid="{{b.openid}}" data-nick="{{b.nickName}}" catchtap="onUnban">解封</view>
+        </view>
+      </view>
+    </block>
+  </block>
+
+  <!-- ==================== 通知与数据 ==================== -->
+  <block wx:if="{{tab === 'notice'}}">
+    <view class="sec-title"><text>订阅消息模板 ID</text></view>
+    <view class="card guide-card">
+      <view class="guide-card__row">1. mp 后台 → 功能 → 订阅消息 → 公共模板库：帖子被留言选「留言回复通知」，留言被回复选「评论回复通知」，私信选「新信件提醒」</view>
+      <view class="guide-card__row">2. 关键词顺序：帖子被留言 = 回复人→文章标题→回复内容→时间；留言被回复 = 回复者→原评论→回复内容→时间；私信 = 提醒内容→温馨提示→更新时间</view>
+      <view class="guide-card__row">3. 提交后到「我的模板」→ 详情里复制模板 ID，粘到下面的框里保存。留空只是收不到这类提醒，其他功能照常</view>
+      <view class="guide-card__row">4. 三格互不通用：填错格子会推出去，但第二行显示的是别的东西（比如把帖子标题塞进「原评论」）</view>
+    </view>
+    <view class="pressable guide-more" bindtap="copyTemplateGuide" hover-class="guide-more--hover" hover-stay-time="80">
+      <image class="guide-more__icon" src="/assets/icons/filter--brand.svg" mode="aspectFit" />
+      <text class="muted">不知道去哪找？点这里看图文说明</text>
+    </view>
+
+    <view class="card cfg-card">
+      <view class="cfg-label">帖子被留言提醒（模板 ID）</view>
+      <input
+        class="cfg-input"
+        placeholder="「留言回复通知」模板 ID"
+        value="{{submsgInput.comment}}"
+        data-k="comment"
+        bindinput="onCfgInput"
+      />
+      <view wx:if="{{submsgFromEnv.comment}}" class="cfg-hint">检测到环境变量里已配了这个模板，上面留空就用它的。</view>
+
+      <view class="cfg-label">留言被回复提醒（模板 ID）</view>
+      <input
+        class="cfg-input"
+        placeholder="「评论回复通知」模板 ID"
+        value="{{submsgInput.reply}}"
+        data-k="reply"
+        bindinput="onCfgInput"
+      />
+      <view wx:if="{{submsgFromEnv.reply}}" class="cfg-hint">检测到环境变量里已配了这个模板，上面留空就用它的。</view>
+
+      <view class="cfg-label">私信提醒（模板 ID）</view>
+      <input
+        class="cfg-input"
+        placeholder="「新信件提醒」模板 ID"
+        value="{{submsgInput.chat}}"
+        data-k="chat"
+        bindinput="onCfgInput"
+      />
+      <view wx:if="{{submsgFromEnv.chat}}" class="cfg-hint">检测到环境变量里已配了这个模板，上面留空就用它的。</view>
+    </view>
+
+    <view wx:if="{{cfgTip}}" class="tip">{{cfgTip}}</view>
+    <base-button variant="primary" block bind:tap="saveCfg">保存模板 ID</base-button>
+
+    <!-- 屏蔽词：老师投诉学生诽谤时，加词是唯一不用改代码、不用重新部署的手段。
+         放在这里而不是别处，是因为它和模板 ID 一样属于「改完全校生效」的配置 -->
+    <view class="sec-title"><text>屏蔽词（诽谤类）</text></view>
+    <view class="card guide-card">
+      <view class="guide-card__row">1. 一词一格，空格或逗号隔开都行；最多 200 个，单个词不超 12 字</view>
+      <view class="guide-card__row">2. 只加「对人不对事」的表述：垃圾老师、师德败坏、收礼、潜规则这类</view>
+      <view class="guide-card__row" style="color: var(--c-danger)">3. 别加「讲课差、给分低、作业多」——那是正常教学评价，加了等于废掉课程评价</view>
+      <view class="guide-card__row">4. 下面 {{builtinWords.length}} 个是内置词，改不动也删不掉；它们和自配词一起生效</view>
+    </view>
+    <view class="pressable guide-more" bindtap="wordsGuide" hover-class="guide-more--hover" hover-stay-time="80">
+      <image class="guide-more__icon" src="/assets/icons/filter--brand.svg" mode="aspectFit" />
+      <text class="muted">分不清该加哪些？点这里看判断标准</text>
+    </view>
+
+    <view class="card cfg-card">
+      <view class="cfg-label">自配屏蔽词</view>
+      <textarea
+        class="cfg-words"
+        placeholder="垃圾老师 师德败坏 收礼 潜规则"
+        value="{{wordsText}}"
+        bindinput="onWordsInput"
+        maxlength="3000"
+        auto-height="{{true}}"
+        placeholder-class="cfg-words--ph"
+      />
+      <view wx:if="{{builtinWords.length}}" class="cfg-hint">内置词：{{builtinWords.length}} 个，一直生效。</view>
+    </view>
+
+    <view wx:if="{{wordsTip}}" class="tip">{{wordsTip}}</view>
+    <base-button variant="secondary" block bind:tap="saveWords">保存屏蔽词</base-button>
+    <!-- 不说「立刻生效」：云函数有多个实例，存词的那个会马上用新词，
+         别的实例还抱着 5 分钟缓存。说是立刻，用户加完当场测试会发现时灵时不灵 -->
+    <view class="bottom-note">保存后最多 5 分钟生效（云函数每个实例各缓存一份，存词的那份立刻生效，其余等缓存过期）。不用重新部署。误加的词删掉再存一次即可。</view>
+
+    <view class="sec-title"><text>校历数据</text></view>
+    <view class="card guide-card">
+      <view class="guide-card__row">当前校历已按教务处官方通知内置：期中 11/2、四六级口语 11/21、四六级笔试 12/12、考研初试 12/26、期末 1/4、寒假 1/18。</view>
+    </view>
+    <base-button variant="secondary" block bind:tap="importCalendar">一键导入官方校历</base-button>
+    <view class="bottom-note">改过校历节点、或者学校出了新通知，点上面这条会整体替换成官方版本。</view>
+  </block>
+</view>
+
+<!-- 底部批量操作条：position:fixed 挂在页面根节点上，
+     它的任何祖先（.container / .sticky-filter）都没有 transform，固定定位才沉得下去 -->
+<view wx:if="{{tab === 'reports' && view === 'pending' && isMod && queue.length > 0}}" class="batch-bar fixed-bar">
+  <view class="batch-bar__inner">
+    <view class="batch-bar__count">
+      <image class="batch-bar__icon" src="/assets/icons/list-checks--brand.svg" mode="aspectFit" />
+      <text>已选 {{checkedCount}} / {{pending}} 条</text>
+    </view>
+    <view class="batch-bar__ops">
+      <view
+        class="batch-btn batch-btn--danger {{checked.length ? '' : 'batch-btn--off'}}"
+        bindtap="rejectChecked"
+        hover-class="batch-btn--hover"
+        hover-stay-time="80"
+      >驳回已选</view>
+      <view
+        class="batch-btn batch-btn--danger-ghost"
+        bindtap="rejectAll"
+        hover-class="batch-btn--hover"
+        hover-stay-time="80"
+      >全部驳回</view>
+    </view>
+  </view>
+</view>

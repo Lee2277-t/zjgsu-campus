@@ -1,0 +1,17 @@
+<!-- components/ui/net-tip/index.wxml -->
+<!-- 细条：列表里有内容（可能是缓存），只在顶上提醒一句，不挡内容 -->
+<view wx:if="{{show && !block}}" class="net-bar">
+  <view class="net-bar__dot"></view>
+  <view class="net-bar__text">{{title}}</view>
+  <view class="net-bar__btn tap {{busy ? 'net-bar__btn--busy' : ''}}" bindtap="onRetry">{{busy ? busyText : retryText}}</view>
+</view>
+
+<!-- 卡片：一条内容都渲染不出来，必须把「读不到」说清楚，不能让空态冒充成事实 -->
+<view wx:elif="{{show && block}}" class="net-block">
+  <view class="net-block__icon">
+    <image class="net-block__img" src="/assets/icons/refresh--faint.svg" mode="aspectFit" />
+  </view>
+  <view class="net-block__title">{{title}}</view>
+  <view wx:if="{{desc}}" class="net-block__desc">{{desc}}</view>
+  <view class="net-block__btn tap {{busy ? 'net-block__btn--busy' : ''}}" bindtap="onRetry">{{busy ? busyText : retryText}}</view>
+</view>

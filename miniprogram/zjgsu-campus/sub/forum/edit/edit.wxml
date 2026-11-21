@@ -1,0 +1,90 @@
+<page-meta page-style="{{themeStyle}}" />
+<app-header title="编辑帖子" showBack bindback="onBack" />
+
+<view class="container ed">
+  <!-- 三种「进不来 / 没得改」的情形各给一句实话。
+       不给空表单是有理由的：用户看到三个空框会以为自己的帖子丢了，
+       而「只有作者能改」「帖子已被删」这两句他能立刻理解 -->
+  <view wx:if="{{loading}}" class="card ed-note">
+    <text class="ed-note__text">正在打开…</text>
+  </view>
+  <view wx:elif="{{unavailable}}" class="card ed-note ed-note--off">
+    <image class="ed-note__icon" src="/assets/icons/info--muted.svg" mode="aspectFit" />
+    <text class="ed-note__text">{{unavailable}}</text>
+  </view>
+
+  <block wx:else>
+    <!-- 这条帖子是什么：只展示、不可改。
+         说清「改不了板块」比不给看强 —— 用户至少知道东西还在原处 -->
+    <view class="card ed-meta">
+      <view class="ed-meta__row" wx:if="{{board}}">
+        <image class="ed-meta__icon" src="/assets/icons/folder--muted.svg" mode="aspectFit" />
+        <text class="ed-meta__k">板块</text>
+        <text class="ed-meta__v">{{board}}</text>
+      </view>
+      <view class="ed-meta__row" wx:if="{{author}}">
+        <image class="ed-meta__icon" src="/assets/icons/user-round--muted.svg" mode="aspectFit" />
+        <text class="ed-meta__k">作者</text>
+        <text class="ed-meta__v">{{author}}</text>
+      </view>
+      <view wx:if="{{board || author}}" class="ed-meta__note">板块和作者改不了 —— 它们决定这条帖子出现在哪儿、算谁发的</view>
+    </view>
+
+    <view class="card">
+      <view class="ed-label">
+        <text>标题</text>
+        <text class="ed-count {{leftTitle < 10 ? 'ed-count--warn' : ''}}">{{leftTitle}}</text>
+      </view>
+      <input class="ed-field" placeholder="一句话说清这条帖子讲什么" maxlength="60"
+             value="{{title}}" bindinput="onTitle" />
+    </view>
+
+    <view class="card">
+      <view class="ed-label">
+        <text>正文</text>
+        <text class="ed-count {{leftContent < 50 ? 'ed-count--warn' : ''}}">{{leftContent}}</text>
+      </view>
+      <textarea class="ed-area" placeholder="展开说一说" maxlength="2000"
+                value="{{content}}" bindinput="onContent" auto-height />
+    </view>
+
+    <view class="card">
+      <view class="ed-label">
+        <text>配图（最多 6 张）</text>
+        <text wx:if="{{uploading}}" class="ed-count">{{uploadPercent}}%</text>
+      </view>
+      <view class="ed-imgs">
+        <view class="ed-img-cell" wx:for="{{images}}" wx:key="*this">
+          <image show-menu-by-longpress class="ed-img tap img-fb" src="{{item}}" mode="aspectFill"
+                 data-src="{{item}}" bindtap="previewImage" />
+          <view class="ed-img-del tap" data-i="{{index}}" catchtap="removeImage">
+            <image class="ed-img-del-icon" src="/assets/icons/x--white.svg" mode="aspectFit" />
+          </view>
+        </view>
+        <view wx:if="{{images.length < 6}}" class="ed-img-cell ed-add tap" bindtap="chooseImages">
+          <image class="ed-add-icon" src="/assets/icons/image--faint.svg" mode="aspectFit" />
+          <text class="ed-add-text">加图</text>
+        </view>
+      </view>
+      <view wx:if="{{imagesLocal}}" class="ed-note-inline">
+        有一张图只存在本机（云存储没连上），别人打开看不到
+      </view>
+    </view>
+
+    <!-- 保存之前说清后果：改过的帖子会标「已修改」，
+         别人读到和记忆中不一样的文字时至少知道它被改过 -->
+    <view class="ed-tip">
+      改完之后这条帖子会标上「已修改」。原来的点赞和评论都会保留。
+    </view>
+  </block>
+
+  <view class="ed-foot">
+    <base-button wx:if="{{!loading && !unavailable}}" class="ed-btn ed-btn--back"
+                 variant="ghost" block bindtap="onBack">取消</base-button>
+    <base-button wx:if="{{!loading && !unavailable}}" class="ed-btn"
+                 variant="primary" block
+                 disabled="{{!dirty}}" loading="{{saving}}" bindtap="onSave">
+      保存修改
+    </base-button>
+  </view>
+</view>

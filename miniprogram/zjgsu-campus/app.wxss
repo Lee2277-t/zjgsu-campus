@@ -1,0 +1,696 @@
+/* ==========================================================================
+   app.wxss —— 校园小站设计系统（原生版）
+   迁移自 Vue3 + Tailwind 高保真原型（tailwind.config.ts）。
+
+   设计令牌一览
+     主色  brand-500 #2B5AED / brand-600 #2047C9 / brand-50  #eff4ff
+     画布  canvas    #F5F7FA
+     文字  ink       #172033 / muted #6F7B91 / faint #98A3B8
+     描边  line      #E8EDF5
+     场景  forum #7357FF / market #F58A32 / campus #19A66A
+           profile 青蓝（.scene-profile 系列）
+     圆角  --r-s 8 / --r-m 16 / --r-l 24 / --r-xl 32 / --r-pill 999（只有这五档）
+     阴影  --sh-1 卡片 / --sh-2 上浮抽屉 / --sh-3 主色发光（色值跟深浅主题走）
+     字号  --fs-* 十档：micro20 tag22 aux24 sub26 body28 h2 30
+           title36 stat44 hero56 mega88。写死 rpx 字号 = 违规（check-ui-scales 会拦）
+     间距  4rpx 栅格：--sp-1:4 ~ --sp-10:40；写死的 padding/margin/gap
+           必须是 4 的倍数（2rpx 发丝线除外）
+     字重  400 正文 / 600 强调 / 700 只给页主标题与 hero 大数字
+     热区  ≥ 88rpx
+
+   两条硬约束（踩过坑，别改）：
+   1) .container / .page-scroll 只允许动 opacity。一旦出现 transform，它们
+      会成为 fixed 元素的包含块，页内所有 position:fixed（悬浮发帖按钮、
+      底部输入栏、BottomSheet）都会退化成相对定位，沉不到屏幕底部。
+   2) 不用 backdrop-filter / @property / clamp 等浏览器专属 API。毛玻璃一律
+      用半透明背景 + 同色描边降级，视觉接近但兼容性稳。
+
+   深色模式：全站色值走 --c-* 令牌，两套值都在下面 page 规则里。
+   新写样式请直接用 var(--c-card) 这类令牌，不要再写死 #ffffff ——
+   写死的那处在深色模式下不会跟着变，而且肉眼看不出来（只有切到深色才暴露），
+   是这个项目最容易积欠的一类债。
+   ========================================================================== */
+
+page {
+  /* ---- 中性（深浅两套都必须覆盖） ---- */
+  --c-bg: #f5f7fa;        /* 页面画布 */
+  --c-card: #ffffff;      /* 卡片 / 白底 */
+  --c-sunken: #f6f8fb;    /* 内凹底：卡片里的次级区块 */
+  --c-fill: #eef1f6;      /* 填充底：分段控件、标签槽 */
+  --c-line: #e8edf5;      /* 描边 / 分隔线 */
+  --c-disabled: #b9c6d8;  /* 禁用态底：按钮置灰、进度条走过的部分 */
+  --c-text: #172033;      /* 主文字 */
+  --c-muted: #6f7b91;     /* 次文字 */
+  --c-faint: #98a3b8;     /* 弱文字 */
+  /* 叠在彩色底上的白字（按钮、tag）。深色下仍是白 ——
+     它是「反色文字」不是「背景」，跟着背景令牌走会变成白底白字 */
+  --c-on-strong: #ffffff;
+  --c-shadow: rgba(0, 0, 0, 0.05);
+  --c-shadow-lift: rgba(23, 32, 51, 0.14); /* 上浮物（抽屉/FAB）的投影 */
+  --c-shadow-brand: rgba(43, 90, 237, 0.18); /* 主色按钮的发光 */
+  --c-brand-line: #dce7ff;      /* 次按钮描边：比 brand-soft 深半档的浅蓝 */
+  --c-handle: #e0e5ee;          /* 抽屉顶部的抓手条 */
+  --c-bg-blur: rgba(245, 247, 250, 0.94); /* 吸顶栏的毛玻璃降级底（画布色 94%） */
+  --c-bg-blur-line: rgba(255, 255, 255, 0.8); /* 毛玻璃底的下描边：模拟 backdrop 的高光边 */
+  /* 浮在「不跟随主题」的第三方内容上的控件：地图、web-view、广告位。
+     它们的底色永远是浅的，压在上面的胶囊若跟着主题变深底浅字就会看不见，
+     所以这一对**深浅同值**——不跟随主题是刻意的，不是漏改 */
+  --c-over: #ffffff;
+  --c-over-text: #172033;
+
+  /* ---- 字阶（只有这十档；展示级数字也有档位，不需要再写死） ---- */
+  --fs-micro: 20rpx;  /* 角标 / 版权 */
+  --fs-tag: 22rpx;    /* 标签 / 胶囊 */
+  --fs-aux: 24rpx;    /* 辅助说明 */
+  --fs-sub: 26rpx;    /* 次正文 / 列表副行 */
+  --fs-body: 28rpx;   /* 正文 */
+  --fs-h2: 30rpx;     /* 卡片标题 / 区块头 */
+  --fs-title: 36rpx;  /* 页主标题 */
+  --fs-stat: 44rpx;   /* 统计数字（统计卡 / 投票计数 / 连续天数） */
+  --fs-hero: 56rpx;   /* hero 大数字 / 头像占位字 */
+  --fs-mega: 88rpx;   /* 倒计时主视觉（校历「还有 N 天」、冷静期天数） */
+
+  /* ---- 间距：4rpx 栅格。--sp-7=28 是卡片内距专用（全站卡片已是 28，
+     收成 24/32 会让所有卡片变样，不值得） ---- */
+  --sp-1: 4rpx;  --sp-2: 8rpx;  --sp-3: 12rpx; --sp-4: 16rpx;
+  --sp-5: 20rpx; --sp-6: 24rpx; --sp-7: 28rpx; --sp-8: 32rpx;
+  --sp-9: 36rpx; --sp-10: 40rpx;
+
+  /* ---- 圆角：只有这五档。50%（正圆头像）和 0 不算违规 ---- */
+  /* ---- 热区：两档（不是随手值，是「一行放得下几个」分出来的） ---- */
+  --hit: 88rpx;      /* 标准：按钮、输入框、列表行。低于这个数手指点不准 */
+  --hit-sm: 72rpx;   /* 小胶囊：赞/踩/分享/收藏这类一行要挤 3~4 个的次要操作。
+                        是对 --hit 的**刻意降级**——不是忘了规范，是 4 个 88rpx
+                        会把卡片撑成两行。用之前先问：这个按钮一行有几个？ */
+
+  --r-s: 8rpx;    /* 小元素：进度条、小图 */
+  --r-m: 16rpx;   /* 内嵌图 / 骨架条 */
+  --r-l: 24rpx;   /* 内层区块 */
+  --r-xl: 32rpx;  /* 外层卡片 / 抽屉顶 */
+  --r-pill: 999rpx;
+
+  /* ---- 阴影：四档，色值跟深浅主题走 ---- */
+  --sh-1: 0 8rpx 24rpx var(--c-shadow);          /* 卡片 */
+  --sh-2: 0 -12rpx 40rpx var(--c-shadow-lift);   /* 上浮抽屉 */
+  --sh-3: 0 8rpx 24rpx var(--c-shadow-brand);    /* 主色按钮发光 */
+  --sh-4: 0 4rpx 12rpx var(--c-shadow-lift);     /* 小元素：按钮、图标圆底 */
+  /* 没有 --c-scrim：半透明的 rgba(255,255,255,.86) 那几处全是「深色底上的白字」
+     （树洞、盲盒、引导页），它们在深色模式下本来就该保持白，不是遮罩。
+     留一个没人用的令牌，以后改色板的人会以为它还在承担什么 */
+
+  /* ---- 场景色 ---- */
+  --c-brand: #2b5aed;
+  --c-brand-deep: #2047c9;
+  --c-brand-soft: #eff4ff;
+  --c-forum: #7357ff;
+  --c-forum-soft: #f1edff;
+  --c-market: #f58a32;
+  --c-market-deep: #d9731f;
+  --c-market-soft: #fff3e9;
+  --c-campus: #19a66a;
+  --c-campus-deep: #128a56;
+  --c-campus-soft: #e9f8f1;
+  --c-profile: #2f9fd6;
+  --c-profile-soft: #e7f5fd;
+  --c-danger: #dd4b55;
+  --c-danger-soft: #fff0f1;
+  --c-amber: #d98c0b;
+  --c-amber-deep: #a86a1c;
+  --c-amber-soft: #fff8e6;
+
+  /* 深色模式下需要压暗的功能性大色块。浅色仍保留原来的识别色。 */
+  --c-hero-from: #2f9fd6;
+  --c-hero-to: #2b5aed;
+  --c-hole-from: #7357ff;
+  --c-hole-to: #4a3bb8;
+  --c-bottle-from: #0e7c86;
+  --c-bottle-to: #2fa8b5;
+
+  background-color: var(--c-bg);
+  color: var(--c-text);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  /* overflow-x: hidden 是 iOS 的必需项，不是样式洁癖：
+     iOS 的页面容器支持横向橡皮筋回弹，页面上任何超出屏宽的内容（负偏移的装饰、
+     横向滚动容器里被裁掉的那一行）都会被「拉」出来一截，
+     用户看到的就是「左右滑动时冒出额外的文字」。锁横向溢出等于把这个出口堵死。
+     注意只锁横轴 —— 锁了纵轴会连 pull-down refresh 一起废掉。 */
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue",
+    "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 深色：只重定义令牌，不重定义任何具体样式。
+   凡是用了 var(--c-*) 的地方自动跟着变，没用令牌的写死色值不会变 ——
+   这也是为什么新样式必须走令牌。
+
+   取值不是把浅色那份取反：深色下纯黑背景配纯白文字对比度过高、看久了累，
+   所以画布用 #0d1117（不是 #000）、卡片 #161b22、文字 #e6edf3（不是 #fff）；
+   彩色则整体提亮一档，否则深底上的 #2b5aed 会显得发闷、点按感变弱。 */
+@media (prefers-color-scheme: dark) {
+  page {
+    --c-bg: #0d1117;
+    --c-card: #161b22;
+    --c-sunken: #1c2128;
+    --c-fill: #22272e;
+    --c-line: #2d333b;
+    --c-disabled: #3a4250;
+    --c-text: #e6edf3;
+    --c-muted: #9198a1;
+    --c-faint: #6e7681;
+    --c-on-strong: #ffffff;
+    --c-shadow: rgba(0, 0, 0, 0.45);
+    --c-shadow-lift: rgba(0, 0, 0, 0.5);
+    --c-shadow-brand: rgba(109, 141, 255, 0.28);
+    --c-brand-line: #2c3a5e;
+    --c-handle: #3a4250;
+    --c-bg-blur: rgba(13, 17, 23, 0.94);
+    /* 深色下这道「高光边」要反过来：白边在深底上是一条刺眼的亮线，
+       改成极淡的白（近乎无）才不会把吸顶栏和正文切开 */
+    --c-bg-blur-line: rgba(255, 255, 255, 0.06);
+    /* --fs-* / --sp-* / --r-* 是尺度令牌，深浅同值，只在浅色侧定义一次；
+       --sh-* 引用的 --c-shadow* 会自己跟着变，也不用重复定义。
+       --c-over / --c-over-text 同样深浅同值，理由见浅色侧的注释 */
+    --c-over: #ffffff;
+    --c-over-text: #172033;
+
+    --c-brand: #6d8dff;
+    --c-brand-deep: #9db4ff;
+    --c-brand-soft: #1a2338;
+    --c-forum: #9b85ff;
+    --c-forum-soft: #241f3d;
+    --c-market: #ff9d52;
+    --c-market-deep: #f0a566;
+    --c-market-soft: #33261a;
+    --c-campus: #3fd08f;
+    --c-campus-deep: #56dda3;
+    --c-campus-soft: #142e26;
+    --c-profile: #5cb8e8;
+    --c-profile-soft: #142c38;
+    --c-danger: #f26d73;
+    --c-danger-soft: #331c1f;
+    --c-amber: #eaa83c;
+    --c-amber-deep: #d99a3f;
+    --c-amber-soft: #33291a;
+
+    --c-hero-from: #1b2c42;
+    --c-hero-to: #202a52;
+    --c-hole-from: #2b2349;
+    --c-hole-to: #1a1938;
+    --c-bottle-from: #12363b;
+    --c-bottle-to: #17434a;
+  }
+}
+
+view,
+text,
+scroll-view,
+input,
+textarea {
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   页面骨架
+   -------------------------------------------------------------------------- */
+.container {
+  padding: var(--sp-6);
+  min-height: 100vh;
+}
+
+@keyframes pageIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 只动 opacity，绝不加 transform，理由见文件头 */
+.container,
+.page-scroll {
+  animation: pageIn 0.28s ease-out both;
+}
+
+.page-scroll {
+  padding-bottom: 240rpx; /* 给底部 tabBar + 悬浮按钮留位 */
+}
+
+/* 固定底栏 / 悬浮按钮 / 抽屉的公共壳 */
+.fixed-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 60;
+}
+
+.fab {
+  position: fixed;
+  right: 32rpx;
+  z-index: 60;
+}
+
+/* 页面级回到顶部：不经过自定义组件，始终显示；主 tab 页放在发布 + 上方。 */
+.backtop-fab {
+  position: fixed;
+  right: 32rpx;
+  z-index: 70;
+  width: 92rpx;
+  height: 92rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  box-shadow: var(--sh-3);
+  color: var(--c-muted);
+  font-size: var(--fs-micro);
+}
+.backtop-fab__icon { width: 30rpx; height: 30rpx; }
+
+/* 论坛手动刷新：放在回到顶部上方，解决部分机型无法触发下拉手势的问题。 */
+.refresh-fab {
+  position: fixed;
+  right: 32rpx;
+  z-index: 70;
+  width: 92rpx;
+  height: 92rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  box-shadow: var(--sh-3);
+  color: var(--c-muted);
+  font-size: var(--fs-micro);
+}
+.refresh-fab__icon { width: 30rpx; height: 30rpx; }
+
+/* --------------------------------------------------------------------------
+   内容图占位：加载失败时别留一个空洞
+   <image> 是原生组件，图裂之后盒子还在、里面是空的，于是列表里留下一个跟
+   底色一样的方块，看起来像「这条本来就没图」。挂上 .img-fb 之后，盒子自带
+   底色和一枚「图片」图标 —— 图正常时图片像素会把背景整块盖住，什么都看不见；
+   只有失败（或还在加载）时才露出来。纯 CSS，不用 binderror，也不用在 data
+   里记「哪一张坏了」，wx:for 里几十张图也不用分配 key。
+   只给 mode="aspectFill" 的内容图用：aspectFit 的图标四周本来就有留白，
+   挂上去会在留白里透出这层底色和图标，反而更难看。
+   base64 里就是 assets/icons/image--faint.svg（#98A3B8 描边），
+   WXSS 取不到包内路径，只能内联。
+   选择器带 image 前缀是为了提权：好几个页面图写了 `background: var(--c-fill)`
+   这种简写，简写会把 background-image 一起重置成 none，单类名压不住它。
+   -------------------------------------------------------------------------- */
+image.img-fb {
+  background-color: var(--c-fill);
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5OEEzQjgiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik00IDVoMTZhMSAxIDAgMCAxIDEgMXYxMmExIDEgMCAwIDEtMSAxSDRhMSAxIDAgMCAxLTEtMVY2YTEgMSAwIDAgMSAxLTF6Ii8+PHBhdGggZD0iTTguNSAxMWExLjUgMS41IDAgMSAwIDAtMyAxLjUgMS41IDAgMCAwIDAgM3oiLz48cGF0aCBkPSJNNCAxN2w0LjUtNCAzLjUgMyA0LTMuNUwyMCAxNyIvPjwvc3ZnPg==");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 44rpx 44rpx;
+}
+
+/* --------------------------------------------------------------------------
+   卡片
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--c-card);
+  border-radius: var(--r-xl);
+  padding: var(--sp-7);
+  margin-bottom: var(--sp-6);
+  box-shadow: var(--sh-1);
+}
+
+.card--flat {
+  box-shadow: none;
+  border: 2rpx solid var(--c-line);
+}
+
+.card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* 内层容器：24rpx 圆角，用在卡片内部的区块/条 */
+.inner {
+  border-radius: var(--r-l);
+}
+
+.divider {
+  height: 2rpx;
+  background: var(--c-line);
+  margin: var(--sp-5) 0;
+}
+
+/* --------------------------------------------------------------------------
+   文字
+   -------------------------------------------------------------------------- */
+.title-lg {            /* 页主标题：全站唯一允许 700 的字号档之一 */
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.4;
+}
+.title-md { font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); }
+.title-sm { font-size: var(--fs-body); font-weight: 600; color: var(--c-text); }
+.body-text { font-size: var(--fs-body); color: var(--c-text); }
+.muted { font-size: var(--fs-aux); color: var(--c-muted); }
+.faint { font-size: var(--fs-tag); color: var(--c-faint); }
+.label { font-size: var(--fs-micro); color: var(--c-faint); }
+
+.hint {
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+
+/* 正文内强调用 600 就够；700 只给页主标题（.title-lg）和 hero 大数字 */
+.strong { font-weight: 600; }
+.center { text-align: center; }
+.truncate { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.clamp2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* --------------------------------------------------------------------------
+   场景色（论坛紫 / 闲置橙 / 校园绿 / 个人资料青蓝）
+   -------------------------------------------------------------------------- */
+.scene-brand   { color: var(--c-brand); }
+.scene-forum   { color: var(--c-forum); }
+.scene-market  { color: var(--c-market); }
+.scene-campus  { color: var(--c-campus); }
+.scene-profile { color: var(--c-profile); }
+.scene-danger  { color: var(--c-danger); }
+
+.bg-brand-50   { background-color: var(--c-brand-soft); }
+.bg-brand      { background-color: var(--c-brand); }
+.bg-forum-soft { background-color: var(--c-forum-soft); }
+.bg-forum      { background-color: var(--c-forum); }
+.bg-market-soft{ background-color: var(--c-market-soft); }
+.bg-market     { background-color: var(--c-market); }
+.bg-campus-soft{ background-color: var(--c-campus-soft); }
+.bg-campus     { background-color: var(--c-campus); }
+.bg-profile-soft { background-color: var(--c-profile-soft); }
+.bg-profile    { background-color: var(--c-profile); }
+.bg-danger-soft{ background-color: var(--c-danger-soft); }
+.bg-slate-50   { background-color: var(--c-sunken); }
+.bg-slate-100  { background-color: var(--c-fill); }
+.bg-line       { background-color: var(--c-line); }
+.bg-white      { background-color: var(--c-card); }
+.bg-canvas     { background-color: var(--c-bg); }
+
+.text-brand   { color: var(--c-brand); }
+.text-forum   { color: var(--c-forum); }
+.text-market  { color: var(--c-market); }
+.text-campus  { color: var(--c-campus); }
+.text-profile { color: var(--c-profile); }
+.text-danger  { color: var(--c-danger); }
+.text-white   { color: var(--c-on-strong); }
+.text-muted   { color: var(--c-muted); }
+.text-faint   { color: var(--c-faint); }
+.text-amber   { color: var(--c-amber); }
+
+/* 主色进度条 / 标签底色，供 vote-card 等组件复用 */
+.brand-soft-bg    { background-color: var(--c-brand-soft); }
+.brand-soft-text  { color: var(--c-brand-deep); }
+.forum-soft-bg    { background-color: var(--c-forum-soft); }
+.forum-soft-text  { color: var(--c-forum); }
+.market-soft-bg   { background-color: var(--c-market-soft); }
+.market-soft-text { color: var(--c-market-deep); }
+.campus-soft-bg   { background-color: var(--c-campus-soft); }
+.campus-soft-text { color: var(--c-campus-deep); }
+
+/* --------------------------------------------------------------------------
+   按钮 / 胶囊
+   -------------------------------------------------------------------------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  padding: 0 var(--sp-8);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+.pill--sm { padding: 0 var(--sp-6); font-size: var(--fs-aux); }
+.pill--block { display: flex; width: 100%; }
+
+.btn-primary {
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+  box-shadow: var(--sh-3);
+}
+.btn-secondary {
+  background: var(--c-brand-soft);
+  color: var(--c-brand-deep);
+  border: 2rpx solid var(--c-brand-line);
+}
+.btn-danger {
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+}
+.btn-disabled {
+  background: var(--c-disabled);
+  color: var(--c-on-strong);
+  box-shadow: none;
+}
+
+/* 按压反馈：所有可点击 view/button 都要带 .tap 或 .pressable */
+.tap,
+.pressable {
+  transition: opacity 0.15s ease, background-color 0.15s ease, transform 0.12s ease;
+}
+.pressable:active,
+.tap:active {
+  opacity: 0.72;
+  transform: scale(0.985);
+}
+/* 热区：至少 88rpx */
+.hit {
+  min-height: 88rpx;
+  min-width: 88rpx;
+  display: flex;
+  align-items: center;
+}
+
+/* --------------------------------------------------------------------------
+   标签
+   -------------------------------------------------------------------------- */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-tag);
+  line-height: 1.5;
+  padding: var(--sp-1) var(--sp-5);
+  border-radius: var(--r-pill);
+  background: var(--c-brand-soft);
+  color: var(--c-brand-deep);
+}
+.tag--gray   { background: var(--c-fill); color: var(--c-muted); }
+.tag--campus { background: var(--c-campus-soft); color: var(--c-campus-deep); }
+.tag--forum  { background: var(--c-forum-soft); color: var(--c-forum); }
+.tag--market { background: var(--c-market-soft); color: var(--c-market-deep); }
+.tag--danger { background: var(--c-danger-soft); color: var(--c-danger); }
+
+/* --------------------------------------------------------------------------
+   列表行（我的 / 私信 / 收藏等）
+   -------------------------------------------------------------------------- */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  min-height: 112rpx;
+  padding: var(--sp-6) var(--sp-8);
+  background: var(--c-card);
+}
+.row + .row { border-top: 2rpx solid var(--c-line); }
+
+/* --------------------------------------------------------------------------
+   搜索框 / 筛选
+   -------------------------------------------------------------------------- */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: 88rpx;
+  padding: 0 var(--sp-7);
+  border-radius: var(--r-pill);
+  background: var(--c-card);
+  box-shadow: var(--sh-1);
+}
+.search-bar input {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  color: var(--c-text);
+}
+
+/* 横向滚动条：隐藏原生滚动条，保持胶囊排布 */
+.no-scrollbar ::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+/* 所有「横向滚动容器里的第一行」都必须是 inline-flex + nowrap：
+   iOS 的 scroll-view 对内部 flex 容器的处理有过分歧 —— 只写 display:flex 时，
+   超宽的一排会**换行**，多出来的第二行被 scroll-view 裁掉后，
+   横向滑动（尤其是边缘返回手势带动的那一下）会从边缘漏出来，
+   页面上就凭空多出一行文字。参见 app.wxss 头部「iOS 横向溢出」那条约束。 */
+.chip-row {
+  display: inline-flex;
+  gap: var(--sp-4);
+  white-space: nowrap;
+  padding-bottom: var(--sp-1);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+  min-height: 88rpx;
+  padding: 0 var(--sp-7);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sub);
+  background: var(--c-card);
+  color: var(--c-muted);
+  border: 2rpx solid var(--c-line);
+}
+.chip-on {
+  background: var(--c-brand);
+  color: var(--c-on-strong);
+  border-color: var(--c-brand);
+  box-shadow: var(--sh-3);
+}
+.chip-empty { opacity: 0.45; }
+
+/* 分段控件（课程/老师这类二选一） */
+.segmented {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--c-fill);
+}
+.segmented-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-body);
+  color: var(--c-muted);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.segmented-item-on {
+  background: var(--c-card);
+  color: var(--c-brand);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.06);
+  font-weight: 600;
+}
+
+/* 顶部吸顶筛选栏 */
+.sticky-filter {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 16rpx 0;
+  background: var(--c-bg);
+}
+.sticky-filter--blur {
+  /* 毛玻璃降级：半透明画布色 + 同色描边，不用 backdrop-filter。
+     --c-bg-blur 深浅两侧各有一份（浅色 94% 白画布 / 深色 94% 深画布），
+     写死 rgba(245,247,250) 会在深色模式下顶出一条亮带 */
+  background: var(--c-bg-blur);
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+/* --------------------------------------------------------------------------
+   BottomSheet（半屏抽屉）
+   -------------------------------------------------------------------------- */
+.sheet-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 90;
+  background: rgba(23, 32, 51, 0.35);
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 95;
+  max-height: 76vh;
+  background: var(--c-card);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: var(--sh-2);
+  padding: var(--sp-6) var(--sp-10) calc(var(--sp-10) + env(safe-area-inset-bottom));
+  transform: translateY(0);
+  transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sheet--closed { transform: translateY(105%); }
+.sheet-handle {
+  width: 80rpx;
+  height: 8rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-handle);
+  margin: 0 auto var(--sp-6);
+}
+
+/* --------------------------------------------------------------------------
+   骨架屏
+   -------------------------------------------------------------------------- */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.skeleton {
+  background: var(--c-fill);
+  border-radius: var(--r-m);
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+/* --------------------------------------------------------------------------
+   列表分页（上拉加载）
+   分页状态机在 utils/pager.js，这里只放底部那行提示的样式。
+   原来这份是论坛页私有的 .load-more，四个列表都要用时提到全局 ——
+   「加载中」和「已经到底啦」的写法必须全站一致，否则同一个动作
+   在不同页面长得不一样，看着像两个功能。
+   -------------------------------------------------------------------------- */
+.load-more {
+  text-align: center;
+  color: var(--c-faint);
+  font-size: var(--fs-aux);
+  padding: var(--sp-6) 0 var(--sp-8);
+}
+
+/* --------------------------------------------------------------------------
+   空状态
+   -------------------------------------------------------------------------- */
+/* 轻量空态：一句话说完的那种（「还没有评论」「没有找到相关帖子」）。
+   排版刻意与 empty-state 组件的 .ui-empty__desc 取同一组值（--fs-aux / 1.7 / muted），
+   两处留白也一样是 80rpx 48rpx —— 同一个页面里两种空态不该一个疏一个密。
+   留白是一次性海报位，不走栅格令牌。 */
+.empty {
+  padding: 80rpx 48rpx;
+  text-align: center;
+  color: var(--c-muted);
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+}
+.empty-title { font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); }
+.empty-desc { margin-top: var(--sp-3); font-size: var(--fs-aux); color: var(--c-muted); line-height: 1.7; }
+
+
+/* 折叠分类的“展开 / 收起”：只给这两个动作上淡蓝色，
+   与周围的说明文字区分开，避免整颗胶囊换色后看不出可点。 */
+.fold-toggle.fold-toggle {
+  color: #6b9ff7;
+  font-weight: 500;
+}

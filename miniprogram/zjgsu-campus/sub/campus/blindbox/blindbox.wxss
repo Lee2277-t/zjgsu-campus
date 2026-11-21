@@ -1,0 +1,488 @@
+/* sub/campus/blindbox/blindbox —— 校园盲盒 / 漂流瓶（深色沉浸式）
+   底色 #0d1026，卡片一律降级成「半透明底 + 同色描边」，不用毛玻璃 API。
+   氛围光晕是 absolute + filter:blur 的装饰层，不参与布局也不吃点击。 */
+
+.bb {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background-color: #0d1026;
+  /* 顶部紫色光 + 右侧蓝色光 + 主体纵向渐变，全部走 background-image，不用伪元素堆叠 */
+  background-image:
+    radial-gradient(circle at 50% 6%, rgba(92, 76, 185, 0.42), rgba(13, 16, 38, 0) 38%),
+    radial-gradient(circle at 88% 72%, rgba(32, 92, 180, 0.26), rgba(13, 16, 38, 0) 36%),
+    linear-gradient(180deg, #0b1234 0%, #0d1026 48%, #080b1d 100%);
+}
+
+.bb__glow {
+  position: absolute;
+  left: -20%;
+  top: -12%;
+  width: 140%;
+  height: 460rpx;
+  border-radius: var(--r-pill);
+  background-color: rgba(92, 76, 185, 0.28);
+  filter: blur(60rpx);
+  pointer-events: none;
+}
+.bb__glow--btm {
+  left: -30%;
+  top: auto;
+  bottom: 8%;
+  height: 420rpx;
+  background-color: rgba(32, 92, 180, 0.22);
+  filter: blur(70rpx);
+}
+
+.bb__body {
+  position: relative;
+  z-index: 10;
+  padding: 16rpx 24rpx calc(60rpx + env(safe-area-inset-bottom));
+}
+
+/* --------------------------------------------------------------------------
+   顶部标题区
+   -------------------------------------------------------------------------- */
+.bb-hero {
+  padding: 32rpx 16rpx 20rpx;
+  text-align: center;
+}
+.bb-hero__badge {
+  width: 80rpx;
+  height: 80rpx;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+}
+.bb-hero__icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+.bb-hero__title {
+  margin-top: 24rpx;
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--c-on-strong);
+}
+.bb-hero__sub {
+  margin-top: 12rpx;
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* --------------------------------------------------------------------------
+   捞瓶区（大字次数 + 圆形撒网按钮）
+   -------------------------------------------------------------------------- */
+.bb-pool {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  padding: 32rpx 28rpx;
+  margin-bottom: 24rpx;
+  border-radius: var(--r-xl);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bb-pool__left {
+  flex: 1;
+  min-width: 0;
+}
+.bb-pool__num {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--c-on-strong);
+}
+.bb-pool__unit {
+  margin-top: 8rpx;
+  font-size: var(--fs-tag);
+  color: rgba(255, 255, 255, 0.5);
+}
+.bb-pool__hint {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 16rpx;
+  font-size: var(--fs-tag);
+  color: rgba(255, 255, 255, 0.38);
+}
+.bb-pool__hint-icon {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+}
+
+.bb-fetch {
+  position: relative;
+  flex-shrink: 0;
+  width: 200rpx;
+  height: 200rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  border: 2rpx solid rgba(169, 233, 255, 0.22);
+  background: rgba(169, 233, 255, 0.08);
+  box-shadow: 0 0 56rpx rgba(74, 196, 255, 0.18);
+}
+.bb-fetch.off {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
+}
+.bb-fetch__core {
+  width: 160rpx;
+  height: 160rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  border-radius: var(--r-pill);
+  background: linear-gradient(135deg, #5fd3ff 0%, var(--c-brand) 100%);
+  box-shadow: 0 0 36rpx rgba(94, 206, 255, 0.45);
+}
+.bb-fetch.off .bb-fetch__core {
+  background: linear-gradient(135deg, #6b7590 0%, #3c465f 100%);
+  box-shadow: none;
+}
+.bb-fetch__core-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+.bb-fetch__core-text {
+  font-size: var(--fs-aux);
+  font-weight: 700;
+  color: #071333;
+}
+.bb-fetch.off .bb-fetch__core-text { color: rgba(255, 255, 255, 0.7); }
+
+/* 撒网时的水波：三圈错开延迟扩散 */
+.bb-fetch__ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 200rpx;
+  height: 200rpx;
+  margin-left: -100rpx;
+  margin-top: -100rpx;
+  border-radius: var(--r-pill);
+  border: 2rpx solid rgba(169, 233, 255, 0.3);
+  animation: bbRipple 1.6s ease-out infinite;
+}
+.bb-fetch__ring--2 { animation-delay: 0.5s; }
+@keyframes bbRipple {
+  0% { transform: scale(0.92); opacity: 0.55; }
+  100% { transform: scale(1.85); opacity: 0; }
+}
+
+.bb-cloud {
+  margin: -8rpx 0 24rpx;
+  padding: 16rpx 24rpx;
+  border-radius: var(--r-l);
+  background: rgba(217, 140, 11, 0.14);
+  border: 2rpx solid rgba(217, 140, 11, 0.3);
+  font-size: var(--fs-tag);
+  color: #f0c583;
+  line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   玻璃卡（毛玻璃降级）
+   -------------------------------------------------------------------------- */
+.bb-card {
+  position: relative;
+  z-index: 10;
+  margin-bottom: 24rpx;
+  padding: 28rpx;
+  border-radius: var(--r-xl);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+  background: rgba(9, 11, 30, 0.34);
+  box-shadow: 0 12rpx 34rpx rgba(4, 7, 24, 0.2);
+}
+.bb-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.bb-card__icon {
+  width: 34rpx;
+  height: 34rpx;
+  flex-shrink: 0;
+}
+.bb-card__title {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-on-strong);
+}
+
+/* --------------------------------------------------------------------------
+   捞到的瓶子
+   -------------------------------------------------------------------------- */
+.bb-bottle__top {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 48rpx;
+}
+.bb-kind {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+  padding: 8rpx 20rpx;
+  border-radius: var(--r-pill);
+  background: rgba(169, 233, 255, 0.14);
+}
+.bb-kind__icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+.bb-kind__text {
+  font-size: var(--fs-tag);
+  color: #a9e9ff;
+}
+.bb-lock {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8rpx;
+  font-size: var(--fs-tag);
+  color: rgba(255, 255, 255, 0.45);
+}
+.bb-lock--on {
+  justify-content: flex-start;
+  color: #a9e9ff;
+}
+.bb-lock__icon {
+  width: 26rpx;
+  height: 26rpx;
+  flex-shrink: 0;
+}
+
+.bb-bottle__content {
+  margin-top: 20rpx;
+  font-size: var(--fs-body);
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.92);
+  word-break: break-all;
+}
+
+.bb-area {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  min-height: 160rpx;
+  border-radius: var(--r-l);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: var(--fs-sub);
+  line-height: 1.7;
+  color: var(--c-on-strong);
+}
+.bb-area-ph { color: rgba(255, 255, 255, 0.32); }
+
+.bb-ops {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+.bb-op {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180rpx;
+  min-height: 88rpx;
+  padding: 0 32rpx;
+  border-radius: var(--r-pill);
+  border: 2rpx solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: var(--fs-sub);
+  color: rgba(255, 255, 255, 0.8);
+}
+.bb-op--main {
+  border-color: transparent;
+  background: var(--c-campus);
+  color: var(--c-on-strong);
+  font-weight: 600;
+}
+.bb-op--main.off {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.bb-unlocked {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: rgba(25, 166, 106, 0.16);
+  border: 2rpx solid rgba(25, 166, 106, 0.34);
+  font-size: var(--fs-aux);
+  color: #7fe0b4;
+  min-width: 0;
+}
+.bb-unlocked__icon {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+}
+.bb-unlocked.pop { animation: bbPop 0.42s ease both; }
+@keyframes bbPop {
+  0% { transform: scale(0.94); opacity: 0; }
+  60% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   扔瓶子
+   -------------------------------------------------------------------------- */
+.bb-kinds {
+  margin-top: 20rpx;
+}
+.bb-kinds__row {
+  /* inline-flex 而非 flex：理由见 app.wxss 的 .chip-row 注释（iOS 横向滚动不换行） */
+  display: inline-flex;
+  gap: 16rpx;
+  white-space: nowrap;
+}
+.bb-kind-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 88rpx;
+  padding: 0 28rpx;
+  border-radius: var(--r-pill);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: var(--fs-sub);
+  color: rgba(255, 255, 255, 0.62);
+  transition: background-color 0.24s ease, border-color 0.24s ease, color 0.24s ease;
+}
+.bb-kind-chip.on {
+  border-color: rgba(25, 166, 106, 0.6);
+  background: rgba(25, 166, 106, 0.18);
+  color: var(--c-on-strong);
+}
+.bb-kind-chip__icon {
+  width: 30rpx;
+  height: 30rpx;
+}
+
+.bb-hint {
+  margin-top: 16rpx;
+  font-size: var(--fs-tag);
+  color: rgba(255, 255, 255, 0.42);
+  line-height: 1.6;
+}
+
+.bb-throw {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96rpx;
+  margin-top: 24rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-campus);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--c-on-strong);
+  box-shadow: 0 8rpx 24rpx rgba(25, 166, 106, 0.28);
+}
+.bb-throw.off {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.bb-note {
+  margin-top: 20rpx;
+  font-size: var(--fs-tag);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   我的瓶子
+   -------------------------------------------------------------------------- */
+.bb-more {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 96rpx;
+  margin: 8rpx 0 20rpx;
+  padding: 24rpx 28rpx;
+  border-radius: var(--r-xl);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+/* 展开时箭头转 90° 变成朝下，收起时回到朝右 */
+.bb-more__icon {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+  transform: rotate(0deg);
+  transition: transform 0.24s ease;
+}
+.bb-more--open .bb-more__icon { transform: rotate(90deg); }
+.bb-more__text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sub);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.bb-empty {
+  text-align: center;
+  font-size: var(--fs-aux);
+  color: rgba(255, 255, 255, 0.42);
+  padding: 48rpx 0;
+}
+
+.bb-mine { padding: 24rpx 28rpx; }
+.bb-mine__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+.bb-mine__replies {
+  flex-shrink: 0;
+  font-size: var(--fs-tag);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.bb-reply {
+  margin-top: 16rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: rgba(255, 255, 255, 0.06);
+  border-left: 4rpx solid rgba(25, 166, 106, 0.6);
+}
+.bb-reply__content {
+  font-size: var(--fs-sub);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+  word-break: break-all;
+}
+.bb-reply__meta {
+  margin-top: 12rpx;
+  font-size: var(--fs-tag);
+  color: rgba(255, 255, 255, 0.4);
+}

@@ -1,0 +1,11 @@
+<!-- 列表过长时的回到顶部：不用每页各写一份定位和图标。 -->
+<view
+  class="back-top pressable"
+  style="bottom: {{bottom}};"
+  hover-class="back-top--hover"
+  hover-stay-time="80"
+  bindtap="onTap"
+>
+  <image class="back-top__icon" src="/assets/icons/arrow-up--faint.svg" mode="aspectFit" />
+  <text>顶部</text>
+</view>

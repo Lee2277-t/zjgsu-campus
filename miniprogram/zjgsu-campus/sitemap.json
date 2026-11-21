@@ -1,0 +1,25 @@
+{
+  "desc": "关于本文件的更多信息，请参考文档 https://developers.weixin.qq.com/miniprogram/dev/framework/sitemap.html",
+  "rules": [
+    { "action": "allow", "page": "pages/course/list/list" },
+    { "action": "allow", "page": "sub/course/detail/detail" },
+    { "action": "allow", "page": "sub/course/teacher/teacher" },
+    { "action": "allow", "page": "pages/forum/list/list" },
+    { "action": "allow", "page": "sub/forum/detail/detail" },
+    { "action": "allow", "page": "sub/forum/hole/hole" },
+    { "action": "allow", "page": "pages/market/list/list" },
+    { "action": "allow", "page": "sub/market/detail/detail" },
+    { "action": "allow", "page": "pages/campus/campus" },
+    { "action": "allow", "page": "sub/campus/event/event" },
+    { "action": "disallow", "page": "pages/user/*" },
+    { "action": "disallow", "page": "pages/mine/*" },
+    { "action": "disallow", "page": "sub/mine/*" },
+    { "action": "disallow", "page": "pages/admin/*" },
+    { "action": "disallow", "page": "pages/forum/hidden" },
+    { "action": "disallow", "page": "pages/forum/comment-appeal" },
+    { "action": "disallow", "page": "sub/campus/mine/mine" },
+    { "action": "disallow", "page": "sub/campus/blindbox/blindbox" },
+    { "action": "disallow", "page": "pages/tool/memo/memo" },
+    { "action": "disallow", "page": "*" }
+  ]
+}

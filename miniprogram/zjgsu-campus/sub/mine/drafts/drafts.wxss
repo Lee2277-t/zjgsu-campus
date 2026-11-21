@@ -1,0 +1,59 @@
+/* sub/mine/drafts/drafts.wxss —— 草稿箱
+   复用 app.wxss：.container / .card / .tag / .muted / .faint / .clamp2。 */
+
+.dt-page { padding-top: 8rpx; }
+.dt-loading { padding: 60rpx 0; text-align: center; font-size: var(--fs-sub); color: var(--c-faint); }
+
+/* ---------- 顶部计数 + 清空 ---------- */
+.dt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 0 8rpx 12rpx;
+}
+.dt-clear {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-height: 88rpx;
+  padding: 0 8rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-danger);
+}
+.dt-clear--hover { opacity: 0.6; }
+.dt-clear__icon { width: 30rpx; height: 30rpx; }
+
+/* ---------- 草稿卡片 ---------- */
+.dt-item { padding-bottom: 24rpx; }
+.dt-item--hover { opacity: 0.72; }
+
+.dt-item__top {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+.dt-tag { background: var(--c-brand-soft); color: var(--c-brand-deep); }
+.dt-time { flex-shrink: 0; }
+
+.dt-del {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-height: 88rpx;
+  margin-left: auto;
+  padding: 0 8rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-danger);
+}
+.dt-del--hover { opacity: 0.6; }
+.dt-del__icon { width: 30rpx; height: 30rpx; }
+
+.dt-item__title { font-size: var(--fs-h2); font-weight: 600; color: var(--c-text); line-height: 1.5; }
+.dt-item__preview {
+  margin-top: 12rpx;
+  font-size: var(--fs-sub);
+  color: var(--c-muted);
+  line-height: 1.6;
+}

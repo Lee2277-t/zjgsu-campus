@@ -1,0 +1,365 @@
+/* pages/user/card —— 同学名片。类名统一 cd-*，
+   .card / .title-lg / .muted / .bg-profile-soft 等语义类来自 app.wxss。 */
+
+/* ---------- 名片头 ---------- */
+.cd-hero {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  padding: 40rpx 28rpx;
+}
+
+.cd-avatar {
+  width: 148rpx;
+  height: 148rpx;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--c-profile), var(--c-brand));
+  box-shadow: 0 8rpx 24rpx rgba(47, 159, 214, 0.28);
+}
+.cd-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+.cd-avatar-text {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-on-strong);
+  font-size: var(--fs-hero);
+  font-weight: 700;
+}
+
+.cd-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.cd-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8rpx;
+  max-width: 100%;
+  padding: 8rpx 20rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-profile-soft);
+  color: var(--c-profile);
+  font-size: var(--fs-tag);
+  line-height: 1.5;
+}
+.cd-tag-icon {
+  width: 26rpx;
+  height: 26rpx;
+  flex-shrink: 0;
+}
+
+.cd-motto {
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 备注名下面的「原名」。比主标题小一档、颜色更淡：
+   它是「这人到底是谁」的兜底说明，不该和备注名抢注意力 */
+.cd-alias {
+  font-size: var(--fs-tag);
+  color: var(--c-faint);
+  margin-top: -4rpx;
+}
+
+/* ---------- 关系状态条 ----------
+   提到页面第二块：之前「现在是什么关系」散在下面三张卡片里，
+   用户要读完两三屏才拼得出来 —— 而这恰恰是这一页唯一需要先知道的事 */
+.cd-rel {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 24rpx 28rpx;
+}
+.cd-rel__icon {
+  width: 40rpx;
+  height: 40rpx;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+.cd-rel__main { flex: 1; min-width: 0; }
+.cd-rel__title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+.cd-rel__sub {
+  margin-top: 8rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+/* 已拉黑：整条压成暖色，一眼能看出「这条关系现在是关着的」 */
+.cd-rel--off {
+  background: var(--c-amber-soft);
+  border: 2rpx solid #ffe1a6;
+}
+.cd-rel--off .cd-rel__title { color: var(--c-amber-deep); }
+.cd-rel--off .cd-rel__sub { color: #b8791f; }
+
+/* ---------- 卡片底部的次级动作 ----------
+   拉黑和举报都不是「主按钮」：它们各占半行、小字、无边框，
+   视觉上明确低于上面的「加好友 / 发消息」——
+   主次不分的话，误触一次拉黑就断了一段关系 */
+.cd-tail {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 2rpx solid var(--c-fill);
+}
+.cd-tail-card { padding: 20rpx 28rpx; }
+.cd-tail__btn {
+  flex: 1;
+  text-align: center;
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+  padding: 8rpx 0;
+}
+
+/* ---------- 分区标题（图标 + 文字） ---------- */
+.cd-sec {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+  margin-bottom: 16rpx;
+}
+.cd-sec-icon {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+}
+
+.cd-btn { margin-top: 24rpx; }
+
+/* 纯文字操作区：没有容器边框、底色和胶囊，点击热区只跟随文字。
+   两列宽度固定，保证上下两行严格按列对齐。 */
+.cd-text-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 48rpx;
+  width: 100%;
+  margin-top: 28rpx;
+}
+.cd-text-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 240rpx;
+  min-width: 0;
+}
+.cd-text-actions--single .cd-text-col {
+  width: 240rpx;
+}
+.cd-text-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  min-height: 72rpx;
+  padding: 0 36rpx;
+  border: 2rpx solid var(--c-brand-line);
+  border-radius: var(--r-pill);
+  background: var(--c-brand-soft);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-brand-deep);
+  text-align: center;
+  box-sizing: border-box;
+}
+.cd-text-main--profile {
+  border-color: var(--c-profile-soft);
+  background: var(--c-profile-soft);
+  color: var(--c-profile);
+}
+.cd-text-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52rpx;
+  margin-top: 8rpx;
+  padding: 0 16rpx;
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+  text-align: center;
+}
+.cd-unblock {
+  margin-top: 20rpx;
+  min-height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: var(--fs-aux);
+  color: var(--c-faint);
+}
+.cd-btn-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.cd-tip {
+  margin-top: 20rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+  line-height: 1.7;
+}
+
+/* ---------- 联系方式 ---------- */
+.cd-contact { border-left: 8rpx solid var(--c-profile); }
+
+.cd-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  border-radius: var(--r-l);
+}
+.cd-contact-label {
+  font-size: var(--fs-aux);
+  color: var(--c-profile);
+  flex-shrink: 0;
+}
+.cd-contact-value {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+/* ---------- 已发起等待 ---------- */
+.cd-waiting {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-market-soft);
+  color: var(--c-market-deep);
+  font-size: var(--fs-sub);
+  line-height: 1.6;
+}
+.cd-waiting-icon {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  margin-top: 8rpx;
+}
+
+/* ---------- TA 的历史发帖 ---------- */
+/* 条数标在分区标题右边：它是「一共看到几条」的说明，不是主角，
+   所以做小做淡，不跟标题抢视线 */
+.cd-count {
+  margin-left: 2rpx;
+  padding: 2rpx 16rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-profile-soft);
+  color: var(--c-profile);
+  font-size: var(--fs-tag);
+  font-weight: 500;
+}
+
+/* 条目之间用容器 gap 留白，不用 border-top + :first-of-type 去顶线 ——
+   WXSS 对伪类选择器的支持不可靠，看着能跑，换个基础库就可能整条线都出来 */
+.cd-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.cd-post {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-sunken);
+}
+
+.cd-post-main {
+  flex: 1;
+  min-width: 0;
+}
+.cd-post-title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.4;
+}
+.cd-post-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 8rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+}
+.cd-post-board {
+  padding: 2rpx 12rpx;
+  border-radius: var(--r-s);
+  background: var(--c-sunken);
+}
+
+/* 「已下架」/「置顶」标记。用底色而不是描边：列表里条目本来就密，
+   描边多一行会显得更碎 */
+.cd-post-flag {
+  flex-shrink: 0;
+  padding: 4rpx 16rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+  font-size: var(--fs-micro);
+}
+.cd-post-flag--pin {
+  background: var(--c-profile-soft);
+  color: var(--c-profile);
+}
+.cd-post-go {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+}
+
+/* ---------- 管理操作 ---------- */
+/* 这一块点下去决定的是「别人还能不能用这个小程序」，和上面那些
+   「看看资料」的卡片不是一类东西，所以用左侧红条把它标出来 */
+.cd-admin { border-left: 8rpx solid var(--c-danger); }
+
+.cd-ban {
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-l);
+  background: var(--c-danger-soft);
+}
+.cd-ban-reason {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-danger);
+  line-height: 1.5;
+}
+.cd-ban-time {
+  margin-top: 8rpx;
+  font-size: var(--fs-tag);
+  color: var(--c-muted);
+}
+
+.cd-incomplete { margin-top: 8rpx; font-size: var(--fs-tag); }
